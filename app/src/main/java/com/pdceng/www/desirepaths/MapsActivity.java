@@ -72,11 +72,16 @@ import com.google.maps.android.clustering.algo.NonHierarchicalDistanceBasedAlgor
 import com.google.maps.android.heatmaps.Gradient;
 import com.google.maps.android.heatmaps.HeatmapTileProvider;
 
+import org.jibble.simpleftp.SimpleFTP;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -175,6 +180,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     DatabaseHelper dh = new DatabaseHelper(mContext);
     private CallbackManager callbackManager;
+    private Bitmap capturedBitmap;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -897,6 +903,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             Bundle extras = data.getExtras();
             final Bitmap imageBitmap = (Bitmap) extras.get("data");
 
+            capturedBitmap = imageBitmap;
+            new SendImageFTP().execute("string");
+
             final RelativeLayout topView = (RelativeLayout) findViewById(R.id.topView);
             final CardView cardView = new CardView(this);
 
@@ -1103,6 +1112,49 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         protected void onPostExecute(Bitmap result) {
             bmImage.setImageBitmap(result);
             progressBar.setVisibility(View.GONE);
+        }
+    }
+
+    private class SendImageFTP extends AsyncTask<String, Void, Bitmap>{
+
+        @Override
+        protected Bitmap doInBackground(String... params) {
+                String filename = Universals.FACEBOOK_ID + "_" + String.valueOf(System.currentTimeMillis());
+
+                //converts bitmap to image file
+                File f = new File(mContext.getCacheDir(),filename);
+                try {
+                    f.createNewFile();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                capturedBitmap.compress(Bitmap.CompressFormat.PNG,0,bos);
+                byte[] bitmapdata = bos.toByteArray();
+
+                try {
+                    FileOutputStream fos = new FileOutputStream(f);
+                    fos.write(bitmapdata);
+                    fos.flush();
+                    fos.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                SimpleFTP ftp = new SimpleFTP();
+                try {
+                    ftp.connect("files.000webhost.com",21,"unsucked-parts","Anchorage_0616");
+                    ftp.bin();
+                    ftp.cwd("public_html");
+                    Toast.makeText(mContext, "folder: "+ftp.pwd(), Toast.LENGTH_SHORT).show();
+                    ftp.stor(f);
+                    ftp.disconnect();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                return null;
+
         }
     }
 
