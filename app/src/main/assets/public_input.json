@@ -1,0 +1,62 @@
+[
+  {
+    "url":"http://akonthego.com/blog/wp-content/uploads/2015/08/4th-G-Street-looking-east.jpg",
+    "title":"4th avenue is empty",
+    "snippet":"there are not as many people on this street as their should be",
+    "sentiment":"negative",
+    "latitude":"61.2185",
+    "longitude":"-149.8996",
+    "user":"test_user",
+    "timestamp":"2017-08-02 16:48:09.394"
+  },
+  {
+    "url":"https://smartgrowthamerica.org/app/uploads/anchorage.png",
+    "title":"curb extension",
+    "snippet":"makes it more comfortable to walk at intersection",
+    "sentiment":"neutral",
+    "latitude":"61.2085",
+    "longitude":"-149.8696",
+    "user":"test_user",
+    "timestamp":"2017-08-01 16:48:09.394"
+  },
+  {
+    "url":"http://lighting.cree.com/media/resized/casestudy/images/Cree_Municipal_CityofAnchorage_AnchorageAK_2w=625h=400.jpg",
+    "title":"good lighting",
+    "snippet":"easy to see at night",
+    "sentiment":"positive",
+    "latitude":"61.2065",
+    "longitude":"-148.8996",
+    "user":"test_user",
+    "timestamp":"2017-07-05 16:48:09.394"
+  },
+  {
+    "url":"http://www.mikeshaw.tv/wp-content/uploads/2009/12/SnowmanMikeAnchorage121709.jpg",
+    "title":"poorly cleared road",
+    "snippet":"this road never gets cleared in time",
+    "sentiment":"neutral",
+    "latitude":"61.2035",
+    "longitude":"-149.8596",
+    "user":"test_user",
+    "timestamp":"2017-07-20 16:48:09.394"
+  },
+  {
+    "url":"https://cdn.audleytravel.com/-/-/79/153205002214018166068211194048044042202004064091.jpg",
+    "title":"popular street",
+    "snippet":"good amenities, street furniture, and places to go",
+    "sentiment":"negative",
+    "latitude":"61.2175",
+    "longitude":"-149.8696",
+    "user":"test_user",
+    "timestamp":"2017-08-02 16:48:09.394"
+  },
+  {
+    "url":"https://photos.smugmug.com/Alaska/Alaska-Wildlife/i-QWZ22RG/2/3cd84020/XL/Moose%20Crossing%20Road%20Anchorage%20Alaska%20February%202009-0363-XL.jpg",
+    "title":"moose crossing",
+    "snippet":"no signs for moose crossing",
+    "sentiment":"positive",
+    "latitude":"61.2135",
+    "longitude":"-149.8496",
+    "user":"test_user",
+    "timestamp":"2017-07-30 16:48:09.394"
+  }
+]
