@@ -124,7 +124,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         String newRating = rating;
 
         int ratingGiven = checkRatingGiven(commentId[0]);
-        System.out.println("Original rating given: "+rating);
 
         switch (ratingGiven){
             case NO_RATING_GIVEN:
@@ -139,7 +138,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 if (positive) newRating = String.valueOf(Integer.valueOf(rating)+2);
                 else newRating = String.valueOf(Integer.valueOf(rating)+1);
         }
-        System.out.println("New rating given: "+newRating);
 
         SQLiteDatabase db = getWritableDatabase();
         ContentValues cv = new ContentValues();
@@ -155,9 +153,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     int checkRatingGiven(String commentId){
-        System.out.println("facebook_id: " + Universals.FACEBOOK_ID);
         Bundle bundle = getRow(new UserTable(),UserTable.FACEBOOK_ID,Universals.FACEBOOK_ID);
-        System.out.println(bundle.toString());
 
         String prs = bundle.getString(UserTable.POSITIVE_RATINGS);
         String nrs = bundle.getString(UserTable.NEGATIVE_RATINGS);
@@ -180,14 +176,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 }
             }
         }
-        System.out.println("Rating Given to #"+commentId+": "+result);
         return result;
     }
 
     private void updateRatingsGivenByUser(boolean positive, String commentId) {
-        System.out.println("facebook_id: " + Universals.FACEBOOK_ID);
         Bundle bundle = getRow(new UserTable(),UserTable.FACEBOOK_ID,Universals.FACEBOOK_ID);
-        System.out.println(bundle.toString());
 
         String prs = bundle.getString(UserTable.POSITIVE_RATINGS);
         String nrs = bundle.getString(UserTable.NEGATIVE_RATINGS);
@@ -240,7 +233,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 ratings.add(rating);
             }
         }
-        System.out.println(idsAndRatings.keySet().toString());
 
         Collections.sort(ratings, Collections.<Integer>reverseOrder());
 

@@ -13,6 +13,7 @@ import android.graphics.PorterDuff;
 import android.graphics.Typeface;
 import android.location.Location;
 import android.os.AsyncTask;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
@@ -30,6 +31,7 @@ import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
 import android.view.inputmethod.InputMethodManager;
+import android.webkit.URLUtil;
 import android.widget.AbsListView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -72,6 +74,8 @@ import com.google.maps.android.clustering.algo.NonHierarchicalDistanceBasedAlgor
 import com.google.maps.android.heatmaps.Gradient;
 import com.google.maps.android.heatmaps.HeatmapTileProvider;
 
+import org.apache.commons.net.ftp.FTP;
+import org.apache.commons.net.ftp.FTPClient;
 import org.jibble.simpleftp.SimpleFTP;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -173,6 +177,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private boolean updateCameraMemory = true;
 
+    private boolean permissionRequested = false;
+
     Context mContext = this;
 
     CommentsAdapter adapter;
@@ -180,7 +186,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     DatabaseHelper dh = new DatabaseHelper(mContext);
     private CallbackManager callbackManager;
-    private Bitmap capturedBitmap;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -616,11 +621,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     void dispatchTakePictureIntent(View v) {
-        checkPermission(Manifest.permission.CAMERA, mCameraPermissionGranted);
-
-        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
-            startActivityForResult(takePictureIntent, 1);
+        if(checkPermission(Manifest.permission.CAMERA, mCameraPermissionGranted)>0) {
+            Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+            if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+                startActivityForResult(takePictureIntent, 1);
+            }
         }
     }
 
@@ -628,31 +633,37 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
                 permission)
                 == PackageManager.PERMISSION_GRANTED) {
-            Toast.makeText(mContext, "Access is already granted", Toast.LENGTH_SHORT).show();
+            System.out.println("...permission is granted");
         } else {
             ActivityCompat.requestPermissions(this,
                     new String[]{permission},
                     1);
-            Toast.makeText(mContext, "Access is asking to be granted", Toast.LENGTH_SHORT).show();
+            System.out.println("...asking for permission");
+            checkPermission(permission, bool);
         }
         return 1;
     }
 
     void getLocation(View v) {
+        System.out.println("getting current location!");
         if(checkPermission(Manifest.permission.ACCESS_FINE_LOCATION, mLocationPermissionGranted)>0) {
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            System.out.println("permission asked");
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                System.out.println("moving to location!");
                 mFusedLocationClient.getLastLocation().addOnSuccessListener(this, new OnSuccessListener<Location>() {
                     @Override
                     public void onSuccess(Location location) {
                         if (location != null) {
                             mCurrLatLng = new LatLng(location.getLatitude(), location.getLongitude());
                             Toast.makeText(MapsActivity.this, "Current location: " + mCurrLatLng.latitude + "," + mCurrLatLng.longitude, Toast.LENGTH_SHORT).show();
-                            mMap.addMarker(new MarkerOptions().position(mCurrLatLng).title("Your \'current\' location"));
+//                            mMap.addMarker(new MarkerOptions().position(mCurrLatLng).title("Your \'current\' location"));
                             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(mCurrLatLng, 18));
 
                         }
                     }
                 });
+            } else {
+                System.out.println("access not granted!");
             }
         }
     }
@@ -903,8 +914,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             Bundle extras = data.getExtras();
             final Bitmap imageBitmap = (Bitmap) extras.get("data");
 
-            capturedBitmap = imageBitmap;
-            new SendImageFTP().execute("string");
+            final SendImageFTP sendImageFTP = new SendImageFTP(imageBitmap,this);
+            sendImageFTP.execute();
 
             final RelativeLayout topView = (RelativeLayout) findViewById(R.id.topView);
             final CardView cardView = new CardView(this);
@@ -1032,7 +1043,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                         mCurrLatLng = new LatLng(location.getLatitude(), location.getLongitude());
                                         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(mCurrLatLng, 18));
                                         Bundle bundle = new Bundle();
-//                                bundle.putString(PIEntryTable.URL, publicInput.getUrl());
+                                        bundle.putString(PIEntryTable.URL, sendImageFTP.getFilename());
                                         bundle.putString(PIEntryTable.LATITUDE, String.valueOf(location.getLatitude()));
                                         bundle.putString(PIEntryTable.LONGITUDE, String.valueOf(location.getLongitude()));
                                         bundle.putString(PIEntryTable.SENTIMENT, spinner.getSelectedItem().toString());
@@ -1099,15 +1110,38 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             String urldisplay = urls[0];
             System.out.println(urldisplay);
             Bitmap mIcon11 = null;
-            try {
-                InputStream in = new java.net.URL(urldisplay).openStream();
-                mIcon11 = BitmapFactory.decodeStream(in);
-            } catch (Exception e) {
-                Log.e("Error", e.getMessage());
-                e.printStackTrace();
+            if (URLUtil.isValidUrl(urldisplay)) {
+                try {
+                    InputStream in = new java.net.URL(urldisplay).openStream();
+                    mIcon11 = BitmapFactory.decodeStream(in);
+                } catch (Exception e) {
+                    Log.e("Error", e.getMessage());
+                    e.printStackTrace();
+                }
+
+            } else {
+                FTPClient ftpClient = new FTPClient();
+                System.out.println("Starting connection to FTP site!");
+                try {
+                    ftpClient.connect("host2.bakop.com");
+                    ftpClient.login("pdceng","Anchorage_0616");
+                    ftpClient.enterLocalPassiveMode();
+                    ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
+
+//                    urldisplay = "458226604560086_1502489214879.jpg";
+                    File file = new File(Environment.getExternalStorageDirectory() + File.separator + urldisplay);
+                    Log.d("filepath:", file.getAbsolutePath());
+                    FileOutputStream fos = new FileOutputStream(file);
+                    ftpClient.retrieveFile(urldisplay,fos);
+                    fos.flush();
+                    fos.close();
+                    mIcon11 = BitmapFactory.decodeFile(file.getAbsolutePath());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
-            return mIcon11;
-        }
+                return mIcon11;
+            }
 
         protected void onPostExecute(Bitmap result) {
             bmImage.setImageBitmap(result);
@@ -1115,46 +1149,62 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
-    private class SendImageFTP extends AsyncTask<String, Void, Bitmap>{
+    private class SendImageFTP extends AsyncTask<Void, Integer, String>{
+        Bitmap bitmap;
+        Context context;
+        String filename;
+
+        public SendImageFTP(Bitmap bitmap, Context context){
+            this.bitmap = bitmap;
+            this.context = context;
+            this.filename = Universals.FACEBOOK_ID + "_" + String.valueOf(System.currentTimeMillis()+".jpg");
+        }
 
         @Override
-        protected Bitmap doInBackground(String... params) {
-                String filename = Universals.FACEBOOK_ID + "_" + String.valueOf(System.currentTimeMillis());
+        protected String doInBackground(Void... params) {
+            //converts bitmap to image file
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            bitmap.compress(Bitmap.CompressFormat.JPEG,100,bos);
+            File file = new File(Environment.getExternalStorageDirectory() + File.separator + filename);
 
-                //converts bitmap to image file
-                File f = new File(mContext.getCacheDir(),filename);
-                try {
-                    f.createNewFile();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                capturedBitmap.compress(Bitmap.CompressFormat.PNG,0,bos);
-                byte[] bitmapdata = bos.toByteArray();
+            try {
+                FileOutputStream fos = new FileOutputStream(file);
+                fos.write(bos.toByteArray());
+                fos.flush();
+                fos.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
 
-                try {
-                    FileOutputStream fos = new FileOutputStream(f);
-                    fos.write(bitmapdata);
-                    fos.flush();
-                    fos.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+            SimpleFTP ftp = new SimpleFTP();
+            try {
+//                ftp.connect("files.000webhost.com",21,"unsucked-parts","Anchorage_0616");
+                ftp.connect("host2.bakop.com",21,"pdceng","Anchorage_0616");
+                ftp.bin();
+//                ftp.cwd("public_html");
+//                Log.d("ftp folder: ", ftp.pwd());
+                ftp.stor(file);
+                ftp.disconnect();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
 
-                SimpleFTP ftp = new SimpleFTP();
-                try {
-                    ftp.connect("files.000webhost.com",21,"unsucked-parts","Anchorage_0616");
-                    ftp.bin();
-                    ftp.cwd("public_html");
-                    Toast.makeText(mContext, "folder: "+ftp.pwd(), Toast.LENGTH_SHORT).show();
-                    ftp.stor(f);
-                    ftp.disconnect();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+            return null;
 
-                return null;
+        }
 
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            super.onPostExecute(s);
+        }
+
+        String getFilename(){
+            return filename;
         }
     }
 
