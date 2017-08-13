@@ -13,12 +13,12 @@ import android.graphics.PorterDuff;
 import android.graphics.Typeface;
 import android.location.Location;
 import android.os.AsyncTask;
+import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
-import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.CardView;
 import android.text.SpannableString;
@@ -63,7 +63,6 @@ import com.google.android.gms.maps.model.Dot;
 import com.google.android.gms.maps.model.Gap;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
-import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PatternItem;
 import com.google.android.gms.maps.model.TileOverlay;
 import com.google.android.gms.maps.model.TileOverlayOptions;
@@ -76,6 +75,10 @@ import com.google.maps.android.heatmaps.HeatmapTileProvider;
 
 import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.jibble.simpleftp.SimpleFTP;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -84,7 +87,6 @@ import org.json.JSONObject;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -103,11 +105,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Scanner;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
-
 import static android.graphics.Color.GRAY;
 import static android.graphics.Color.RED;
 import static android.widget.LinearLayout.VERTICAL;
@@ -116,15 +113,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private static final String TAG = "tag";
     private static final int REQUEST_IMAGE_CAPTURE = 1;
-    private GoogleMap mMap;
-
     private static final int COLOR_BLACK_ARGB = 0xff000000;
     private static final int COLOR_WHITE_ARGB = 0xffffffff;
     private static final int COLOR_GREEN_ARGB = 0xff388E3C;
     private static final int COLOR_PURPLE_ARGB = 0xff81C784;
     private static final int COLOR_ORANGE_ARGB = 0xffF57F17;
     private static final int COLOR_BLUE_ARGB = 0xffF9A825;
-
     private static final int POLYLINE_STROKE_WIDTH_PX = 12;
     private static final int POLYGON_STROKE_WIDTH_PX = 8;
     private static final int PATTERN_DASH_LENGTH_PX = 20;
@@ -132,59 +126,40 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private static final PatternItem DOT = new Dot();
     private static final PatternItem DASH = new Dash(PATTERN_DASH_LENGTH_PX);
     private static final PatternItem GAP = new Gap(PATTERN_GAP_LENGTH_PX);
-
     // Create a stroke pattern of a gap followed by a dot.
     private static final List<PatternItem> PATTERN_POLYLINE_DOTTED = Arrays.asList(GAP, DOT);
-
     // Create a stroke pattern of a gap followed by a dash.
     private static final List<PatternItem> PATTERN_POLYGON_ALPHA = Arrays.asList(GAP, DASH);
-
     // Create a stroke pattern of a dot followed by a gap, a dash, and another gap.
     private static final List<PatternItem> PATTERN_POLYGON_BETA =
             Arrays.asList(DOT, GAP, DASH, GAP);
-
-    private ClusterManager<MyItem> mClusterManager;
+    private static int DEFAULT_ZOOM = 10;
     private final LatLng anchorage = new LatLng(61.21, -149.89);
     List<LatLng> lls = new ArrayList<>();
-
-    private HeatmapTileProvider mProvider;
-    private TileOverlay mOverlay;
-
-    private boolean mLocationPermissionGranted;
-    private Location mDefaultLocation;
-    private static int DEFAULT_ZOOM = 10;
-    private Location mLastKnownLocation;
-    private CameraPosition mCameraPosition;
-
-    private GoogleApiClient mGoogleApiClient;
-
-    private boolean mCameraPermissionGranted;
-
-    private boolean mStoragePermissionGranted;
-
-    private ImageView mImageView;
-
-    private FusedLocationProviderClient mFusedLocationClient;
-
-    private LatLng mCurrLatLng;
-
-    private Algorithm<MyItem> clusterManagerAlgorithm;
-
-    private List<CameraPosition> previousCameraPositions = new ArrayList<>();
-    private CameraPosition tempCameraPosition;
-
-    private FloatingActionButton prevMapFab;
-
-    private boolean updateCameraMemory = true;
-
-    private boolean permissionRequested = false;
-
     Context mContext = this;
-
     CommentsAdapter adapter;
     ListView listView;
-
     DatabaseHelper dh = new DatabaseHelper(mContext);
+    private GoogleMap mMap;
+    private ClusterManager<MyItem> mClusterManager;
+    private HeatmapTileProvider mProvider;
+    private TileOverlay mOverlay;
+    private boolean mLocationPermissionGranted;
+    private Location mDefaultLocation;
+    private Location mLastKnownLocation;
+    private CameraPosition mCameraPosition;
+    private GoogleApiClient mGoogleApiClient;
+    private boolean mCameraPermissionGranted;
+    private boolean mStoragePermissionGranted;
+    private ImageView mImageView;
+    private FusedLocationProviderClient mFusedLocationClient;
+    private LatLng mCurrLatLng;
+    private Algorithm<MyItem> clusterManagerAlgorithm;
+    private List<CameraPosition> previousCameraPositions = new ArrayList<>();
+    private CameraPosition tempCameraPosition;
+    private FloatingActionButton prevMapFab;
+    private boolean updateCameraMemory = true;
+    private boolean permissionRequested = false;
     private CallbackManager callbackManager;
 
     @Override
@@ -630,18 +605,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private int checkPermission(String permission, boolean bool) {
+        int result = 0;
         if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
                 permission)
                 == PackageManager.PERMISSION_GRANTED) {
             System.out.println("...permission is granted");
+            result = 1;
         } else {
             ActivityCompat.requestPermissions(this,
                     new String[]{permission},
                     1);
             System.out.println("...asking for permission");
-            checkPermission(permission, bool);
         }
-        return 1;
+        return result;
     }
 
     void getLocation(View v) {
