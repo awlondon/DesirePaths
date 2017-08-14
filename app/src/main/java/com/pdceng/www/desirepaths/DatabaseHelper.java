@@ -7,8 +7,11 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Toast;
 
+import java.security.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -26,6 +29,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static DatabaseHelper instance;
 
+    Context mContext;
+
     public static synchronized DatabaseHelper getInstance(Context context) {
         if (instance==null)
             instance = new DatabaseHelper(context.getApplicationContext());
@@ -38,6 +43,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
+        mContext = context;
     }
 
     @Override
@@ -106,9 +112,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             do{
                 Bundle bundle = new Bundle();
                 bundle.putInt(table.id(), c.getInt(c.getColumnIndexOrThrow(PIEntryTable.ID)));
-                for (String field : table.getFields()) {
+                for (String field : table.getFields())
                     bundle.putString(field, c.getString(c.getColumnIndexOrThrow(field)));
-                }
                 result[i] = bundle;
                 i++;
             } while (c.moveToNext());
@@ -116,7 +121,81 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         c.close();
         if (db.isOpen()) db.close();
 
+        System.out.println(result.toString());
+
         return result;
+    }
+
+    PublicInput[] getAllPublicInput(){
+        Bundle[] bundles = getAllInTable(new PIEntryTable());
+        ArrayList<PublicInput> resultArrayList = new ArrayList<>();
+
+        int i = 0;
+        for (Bundle bundle:bundles) {
+            PublicInput publicInput = new PublicInput();
+            publicInput.setID(String.valueOf(bundle.getInt(PIEntryTable.ID)));
+            publicInput.setLatitude(Double.valueOf(bundle.getString(PIEntryTable.LATITUDE)));
+            publicInput.setLongitude(Double.valueOf(bundle.getString(PIEntryTable.LONGITUDE)));
+            publicInput.setSentiment(bundle.getString(PIEntryTable.SENTIMENT));
+            publicInput.setSnippet(bundle.getString(PIEntryTable.SNIPPET));
+            publicInput.setTimestamp(bundle.getString(PIEntryTable.TIMESTAMP));
+            publicInput.setTitle(bundle.getString(PIEntryTable.TITLE));
+            publicInput.setUrl(bundle.getString(PIEntryTable.URL));
+            publicInput.setUser(bundle.getString(PIEntryTable.USER));
+            resultArrayList.add(publicInput);
+            i++;
+        }
+
+        String[] userPIRatings = getUserPIRatings();
+        ArrayList<PublicInput> removeList = new ArrayList<>();
+        if (userPIRatings!=null) {
+            for (PublicInput publicInput : resultArrayList) {
+                for (String id : userPIRatings) {
+                    if (publicInput.getID().equals(id)){
+                        removeList.add(publicInput);
+                        break;
+                    }
+                }
+            }
+            resultArrayList.removeAll(removeList);
+        }
+
+        return resultArrayList.toArray(new PublicInput[resultArrayList.size()]);
+    }
+
+    private String[] getUserPIRatings(){
+        Bundle user = getRow(new UserTable(), UserTable.FACEBOOK_ID, Universals.FACEBOOK_ID);
+
+        String agree = user.getString(UserTable.PI_AGREE);
+        String disagree = user.getString(UserTable.PI_DISAGREE);
+        String concat = "";
+        if (agree!=null && !agree.isEmpty()) concat += agree;
+        if (disagree!=null && !disagree.isEmpty()) concat += disagree;
+
+        return !concat.isEmpty() ? concat.split(";") : null;
+    }
+
+    void updateUserPIRatings(String piID, boolean agree) {
+        Bundle bundle = getRow(new UserTable(), UserTable.FACEBOOK_ID, Universals.FACEBOOK_ID);
+
+        String updateString;
+        if(agree) updateString = bundle.getString(UserTable.PI_AGREE);
+        else updateString = bundle.getString(UserTable.PI_DISAGREE);
+
+        if (updateString==null)updateString="";
+
+        updateString += piID+";";
+
+        //Update DB
+        SQLiteDatabase db = getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        if (agree) cv.put(UserTable.PI_AGREE, updateString);
+        else cv.put(UserTable.PI_DISAGREE, updateString);
+
+        db.update(UserTable.TABLE_NAME, cv, UserTable.FACEBOOK_ID + "= ?", new String[]{Universals.FACEBOOK_ID});
+
+//        Toast.makeText(mContext, "UpdateString: " + updateString, Toast.LENGTH_SHORT).show();
+        if (db.isOpen()) db.close();
     }
 
     long adjustRating(boolean positive, String...commentId){

@@ -39,8 +39,18 @@ public class CardsActivity extends AppCompatActivity {
                         .setSwipeInMsgLayoutId(R.layout.swipe_in_msg_view)
                         .setSwipeOutMsgLayoutId(R.layout.swipe_out_msg_view));
 
-        for(PublicInput publicInput : CardsUtils.loadPublicInputs(this.getApplicationContext())){
-            mSwipeView.addView(new PublicInputCard(this, publicInput, mSwipeView));
+//        for(PublicInput publicInput : CardsUtils.loadPublicInputs(this.getApplicationContext())){
+//            mSwipeView.addView(new PublicInputCard(this, publicInput, mSwipeView));
+        PublicInput[] publicInputs = new DatabaseHelper(mContext).getAllPublicInput();
+        try {
+            if (publicInputs[0] != null) {
+                for (PublicInput publicInput : publicInputs) {
+                    mSwipeView.addView(new PublicInputCard(this, publicInput, mSwipeView));
+                }
+            }
+        } catch (ArrayIndexOutOfBoundsException exception){
+            Toast.makeText(mContext, "You've rated all public input so far", Toast.LENGTH_SHORT).show();
+            finish();
         }
     }
     public void noSwipe (View v){

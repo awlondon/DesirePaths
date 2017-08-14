@@ -14,6 +14,8 @@ public class UserTable implements Table {
     static final String REGISTERED_TIMESTAMP = "registered_timestamp";
     static final String POSITIVE_RATINGS = "positive_ratings";
     static final String NEGATIVE_RATINGS = "negative_ratings";
+    static final String PI_AGREE = "pi_agree";
+    static final String PI_DISAGREE = "pi_disagree";
     static final String TABLE_NAME = "user_table";
 
     @Override
@@ -24,6 +26,8 @@ public class UserTable implements Table {
         result.add(REGISTERED_TIMESTAMP);
         result.add(POSITIVE_RATINGS);
         result.add(NEGATIVE_RATINGS);
+        result.add(PI_AGREE);
+        result.add(PI_DISAGREE);
         return result;
     }
 

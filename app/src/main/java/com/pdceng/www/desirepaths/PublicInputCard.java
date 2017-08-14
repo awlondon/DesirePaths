@@ -3,8 +3,14 @@ package com.pdceng.www.desirepaths;
 import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.os.AsyncTask;
+import android.os.Environment;
 import android.util.Log;
+import android.webkit.URLUtil;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -20,6 +26,13 @@ import com.mindorks.placeholderview.annotations.swipe.SwipeInState;
 import com.mindorks.placeholderview.annotations.swipe.SwipeOut;
 import com.mindorks.placeholderview.annotations.swipe.SwipeOutState;
 
+import org.apache.commons.net.ftp.FTP;
+import org.apache.commons.net.ftp.FTPClient;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 
 /**
@@ -52,13 +65,15 @@ public class PublicInputCard {
 
     @Resolve
     private void onResolved(){
-        Glide.with(mContext).load(mPublicInput.getUrl()).into(publicInputImageView);
+        new DownloadImageTask(publicInputImageView).execute(mPublicInput.getUrl());
+//        Glide.with(mContext).load(mPublicInput.getUrl()).into(publicInputImageView);
         tvTitle.setText(mPublicInput.getTitle());
         tvSnippet.setText(mPublicInput.getSnippet());
     }
 
     @SwipeOut
     private void onSwipedOut(){
+        new DatabaseHelper(mContext).updateUserPIRatings(mPublicInput.getID(),false);
         checkCount();
         Log.d("EVENT", "onSwipedOut");
     }
@@ -70,6 +85,7 @@ public class PublicInputCard {
 
     @SwipeIn
     private void onSwipeIn(){
+        new DatabaseHelper(mContext).updateUserPIRatings(mPublicInput.getID(),true);
         checkCount();
         Log.d("EVENT", "onSwipedIn");
     }
@@ -89,6 +105,61 @@ public class PublicInputCard {
         if(mSwipeView.getChildCount()<=1){
             Toast.makeText(mContext, "Thank you for your input!", Toast.LENGTH_SHORT).show();
             ((Activity)mContext).finish();
+        }
+    }
+
+    private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
+        ImageView bmImage;
+
+        public DownloadImageTask(ImageView bmImage) {
+            this.bmImage = bmImage;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            publicInputImageView.setImageBitmap(null);
+        }
+
+        protected Bitmap doInBackground(String... urls) {
+            String urldisplay = urls[0];
+            System.out.println(urldisplay);
+            Bitmap mIcon11 = null;
+            if (URLUtil.isValidUrl(urldisplay)) {
+                try {
+                    InputStream in = new java.net.URL(urldisplay).openStream();
+                    mIcon11 = BitmapFactory.decodeStream(in);
+                } catch (Exception e) {
+                    Log.e("Error", e.getMessage());
+                    e.printStackTrace();
+                }
+
+            } else {
+                FTPClient ftpClient = new FTPClient();
+                System.out.println("Starting connection to FTP site!");
+                try {
+                    ftpClient.connect("host2.bakop.com");
+                    ftpClient.login("pdceng","Anchorage_0616");
+                    ftpClient.enterLocalPassiveMode();
+                    ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
+
+//                    urldisplay = "458226604560086_1502489214879.jpg";
+                    File file = new File(Environment.getExternalStorageDirectory() + File.separator + urldisplay);
+                    Log.d("filepath:", file.getAbsolutePath());
+                    FileOutputStream fos = new FileOutputStream(file);
+                    ftpClient.retrieveFile(urldisplay,fos);
+                    fos.flush();
+                    fos.close();
+                    mIcon11 = BitmapFactory.decodeFile(file.getAbsolutePath());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            return mIcon11;
+        }
+
+        protected void onPostExecute(Bitmap result) {
+            bmImage.setImageBitmap(result);
         }
     }
 }

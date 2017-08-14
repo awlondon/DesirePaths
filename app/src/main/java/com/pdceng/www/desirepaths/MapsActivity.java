@@ -21,6 +21,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.CardView;
+import android.text.InputType;
 import android.text.SpannableString;
 import android.text.style.StyleSpan;
 import android.util.Log;
@@ -186,8 +187,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         checkPermission(Manifest.permission.INTERNET, mStoragePermissionGranted);
 
-        if (dh.getAllInTable(new PIEntryTable())==null)
+        try {
+            Bundle bundle = dh.getAllInTable(new PIEntryTable())[0];
+        } catch(ArrayIndexOutOfBoundsException exception){
+            Log.e("exception",exception.getMessage());
             addPIEntriesToDatabase();
+        }
+
 
 //        new ConnectMySQL(null,null,this,1).execute("id2380250_alexlondon","Anchorage_0616");
 //        System.out.println(dh.getRow(new UserTable(),UserTable.FACEBOOK_ID, Universals.FACEBOOK_ID).toString());
@@ -200,7 +206,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(anchorage, 15));
         mMap.setOnInfoWindowClickListener(this);
 
-        checkPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, mStoragePermissionGranted);
+        checkPermission(Manifest.permission.ACCESS_FINE_LOCATION, mLocationPermissionGranted);
 
         if (setUpCluster()) {
             Collection<MyItem> markers = clusterManagerAlgorithm.getItems();
@@ -281,7 +287,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 mImageView = new ImageView(mContext);
                 ViewGroup.LayoutParams ivParams = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 700);
                 mImageView.setLayoutParams(ivParams);
-                mImageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                mImageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
 
                 RelativeLayout.LayoutParams pbParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
                 pbParams.addRule(RelativeLayout.CENTER_IN_PARENT);
@@ -395,6 +401,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         etComment.setBackgroundColor(getColor(R.color.white));
                         etComment.setPadding(margin, 0, margin, 0);
                         etComment.setLayoutParams(etParams);
+                        etComment.setInputType(InputType.TYPE_TEXT_FLAG_MULTI_LINE);
 
                         Button postButton = new Button(mContext);
                         postButton.setText("POST");
@@ -441,7 +448,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 });
                 entryLayout.addView(ibComment);
 
-                //add dummy comment
+/*                //add dummy comment
                 Bundle comment = new Bundle();
                 comment.putString(CommentsTable.PIEntry_ID, String.valueOf(myItem.getId()));
                 comment.putString(CommentsTable.USER, Universals.FACEBOOK_ID);
@@ -449,7 +456,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 comment.putString(CommentsTable.COMMENT, "I agree with this...");
                 comment.putString(CommentsTable.TIMESTAMP, String.valueOf(System.currentTimeMillis()));
 
-                dh.add(comment, new CommentsTable());
+                dh.add(comment, new CommentsTable());*/
 
                 //ListView
                 listView = new ListView(mContext);
@@ -916,7 +923,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             final ImageView imageView = new ImageView(this);
             ViewGroup.LayoutParams ivParams = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 700);
             imageView.setLayoutParams(ivParams);
-            imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            imageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
             final EditText titleEdit = new EditText(this);
             final EditText snippetEdit = new EditText(this);
             final Spinner spinner = new Spinner(this);
@@ -925,7 +932,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             button.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
             titleEdit.setHint("What is it?");
+            titleEdit.setInputType(InputType.TYPE_TEXT_FLAG_IME_MULTI_LINE);
             snippetEdit.setHint("Tell us about it...");
+            snippetEdit.setInputType(InputType.TYPE_TEXT_FLAG_MULTI_LINE);
 
             spinner.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, new String[]{"(How do you feel about it?)", "Positive", "Neutral", "Negative"}));
 
@@ -1022,7 +1031,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                         bundle.putString(PIEntryTable.URL, sendImageFTP.getFilename());
                                         bundle.putString(PIEntryTable.LATITUDE, String.valueOf(location.getLatitude()));
                                         bundle.putString(PIEntryTable.LONGITUDE, String.valueOf(location.getLongitude()));
-                                        bundle.putString(PIEntryTable.SENTIMENT, spinner.getSelectedItem().toString());
+                                        bundle.putString(PIEntryTable.SENTIMENT, spinner.getSelectedItem().toString().toLowerCase());
                                         bundle.putString(PIEntryTable.TITLE, titleEdit.getText().toString());
                                         bundle.putString(PIEntryTable.SNIPPET, snippetEdit.getText().toString());
                                         bundle.putString(PIEntryTable.USER, Universals.NAME);

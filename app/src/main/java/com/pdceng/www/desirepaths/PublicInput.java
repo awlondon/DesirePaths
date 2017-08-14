@@ -10,6 +10,8 @@ import com.google.gson.annotations.SerializedName;
 
 public class PublicInput {
 
+    private String ID;
+
     @SerializedName("url")
     @Expose
     private String url;
@@ -41,6 +43,10 @@ public class PublicInput {
     @SerializedName("timestamp")
     @Expose
     private String timestamp;
+
+    public String getID() { return ID; }
+
+    public void setID(String ID) { this.ID = ID; }
 
     public String getUrl() {
         return url;
