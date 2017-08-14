@@ -2,6 +2,7 @@ package com.pdceng.www.desirepaths;
 
 import android.Manifest;
 import android.animation.Animator;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -12,6 +13,7 @@ import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.Typeface;
 import android.location.Location;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
@@ -162,6 +164,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private boolean updateCameraMemory = true;
     private boolean permissionRequested = false;
     private CallbackManager callbackManager;
+    private Uri imageUri;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -603,10 +606,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     void dispatchTakePictureIntent(View v) {
-        if(checkPermission(Manifest.permission.CAMERA, mCameraPermissionGranted)>0) {
-            Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-            if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
-                startActivityForResult(takePictureIntent, 1);
+        if (checkPermission(Manifest.permission.CAMERA, mCameraPermissionGranted) > 0 && checkPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, mStoragePermissionGranted) > 0) {
+            ContentValues values = new ContentValues();
+            values.put(MediaStore.Images.Media.TITLE, "New Picture");
+            values.put(MediaStore.Images.Media.DESCRIPTION, "From your Camera");
+            imageUri = getContentResolver().insert(
+                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+            Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+            intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
+
+            if (intent.resolveActivity(getPackageManager()) != null) {
+                startActivityForResult(intent, 1);
             }
         }
     }
@@ -894,8 +904,16 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
-            Bundle extras = data.getExtras();
-            final Bitmap imageBitmap = (Bitmap) extras.get("data");
+
+            Bitmap imageBitmap = null;
+
+            try {
+                imageBitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+//            Bundle extras = data.getExtras();
+//            final Bitmap imageBitmap = (Bitmap) extras.get("data");
 
             final SendImageFTP sendImageFTP = new SendImageFTP(imageBitmap,this);
             sendImageFTP.execute();
