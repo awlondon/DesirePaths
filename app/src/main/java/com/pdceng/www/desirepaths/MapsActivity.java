@@ -915,9 +915,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 //            Bundle extras = data.getExtras();
 //            final Bitmap imageBitmap = (Bitmap) extras.get("data");
 
-            final SendImageFTP sendImageFTP = new SendImageFTP(imageBitmap,this);
-            sendImageFTP.execute();
-
             final RelativeLayout topView = (RelativeLayout) findViewById(R.id.topView);
             final CardView cardView = new CardView(this);
 
@@ -1013,6 +1010,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             titleEdit.requestFocus();
             final InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
             inputMethodManager.toggleSoftInputFromWindow(linearLayout.getApplicationWindowToken(), InputMethodManager.SHOW_FORCED, 0);
+
+            final SendImageFTP sendImageFTP = new SendImageFTP(Universals.sampleBitmap(imageBitmap, imageView), this);
+            sendImageFTP.execute();
 
             button.setOnClickListener(new View.OnClickListener() {
                 @Override
