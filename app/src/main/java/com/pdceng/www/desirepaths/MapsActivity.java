@@ -61,12 +61,15 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.Dash;
 import com.google.android.gms.maps.model.Dot;
 import com.google.android.gms.maps.model.Gap;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.PatternItem;
+import com.google.android.gms.maps.model.PolygonOptions;
+import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.maps.model.TileOverlay;
 import com.google.android.gms.maps.model.TileOverlayOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -78,28 +81,16 @@ import com.google.maps.android.heatmaps.HeatmapTileProvider;
 
 import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.jibble.simpleftp.SimpleFTP;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLEncoder;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -137,7 +128,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private static final List<PatternItem> PATTERN_POLYGON_BETA =
             Arrays.asList(DOT, GAP, DASH, GAP);
     private static int DEFAULT_ZOOM = 10;
-    private final LatLng anchorage = new LatLng(61.21, -149.89);
+    private final LatLng startingPoint = new LatLng(64.836803, -147.802731);
     List<LatLng> lls = new ArrayList<>();
     Context mContext = this;
     CommentsAdapter adapter;
@@ -165,10 +156,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private boolean permissionRequested = false;
     private CallbackManager callbackManager;
     private Uri imageUri;
+    private Universals universals;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        universals = new Universals(this);
         bringUpMap();
     }
 
@@ -190,12 +183,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         checkPermission(Manifest.permission.INTERNET, mStoragePermissionGranted);
 
-        try {
+        /*try {
             Bundle bundle = dh.getAllInTable(new PIEntryTable())[0];
         } catch(ArrayIndexOutOfBoundsException exception){
             Log.e("exception",exception.getMessage());
             addPIEntriesToDatabase();
-        }
+        }*/
 
 
 //        new ConnectMySQL(null,null,this,1).execute("id2380250_alexlondon","Anchorage_0616");
@@ -206,8 +199,53 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(anchorage, 15));
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(startingPoint, 12));
         mMap.setOnInfoWindowClickListener(this);
+
+        LatLng[] linePoints = new LatLng[]{
+                new LatLng(64.834832, -147.707030),
+                new LatLng(64.835818, -147.712352),
+                new LatLng(64.836438, -147.721879),
+                new LatLng(64.836913, -147.726685),
+                new LatLng(64.836840, -147.830369),
+                new LatLng(64.836475, -147.834918)
+        };
+
+        LatLng[] polygonPoints = new LatLng[]{
+                new LatLng(64.839832, -147.707030),
+                new LatLng(64.839818, -147.712352),
+                new LatLng(64.839438, -147.721879),
+                new LatLng(64.839913, -147.726685),
+                new LatLng(64.839840, -147.830369),
+                new LatLng(64.839475, -147.834918),
+                new LatLng(64.830475, -147.834918),
+                new LatLng(64.830840, -147.830369),
+                new LatLng(64.830913, -147.726685),
+                new LatLng(64.830438, -147.721879),
+                new LatLng(64.830818, -147.712352),
+                new LatLng(64.830832, -147.707030)
+        };
+
+        mMap.addPolyline((new PolylineOptions())
+                .add(linePoints)
+                .width(5)
+                .color(Color.BLUE)
+                .geodesic(true));
+
+        mMap.addCircle((new CircleOptions())
+                .radius(10f)
+                .center(new LatLng(64.834832, -147.707030))
+                .fillColor(Color.RED)
+                .strokeColor(Color.RED));
+
+        mMap.addCircle((new CircleOptions())
+                .radius(10f)
+                .center(new LatLng(64.836475, -147.834918))
+                .fillColor(Color.RED)
+                .strokeColor(Color.RED));
+
+        mMap.addPolygon((new PolygonOptions())
+                .add(polygonPoints).strokeColor(Color.DKGRAY).strokeWidth(3f).geodesic(true));
 
         checkPermission(Manifest.permission.ACCESS_FINE_LOCATION, mLocationPermissionGranted);
 
@@ -290,7 +328,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 mImageView = new ImageView(mContext);
                 ViewGroup.LayoutParams ivParams = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 700);
                 mImageView.setLayoutParams(ivParams);
-                mImageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
+                mImageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
 
                 RelativeLayout.LayoutParams pbParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
                 pbParams.addRule(RelativeLayout.CENTER_IN_PARENT);
@@ -451,16 +489,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 });
                 entryLayout.addView(ibComment);
 
-/*                //add dummy comment
-                Bundle comment = new Bundle();
-                comment.putString(CommentsTable.PIEntry_ID, String.valueOf(myItem.getId()));
-                comment.putString(CommentsTable.USER, Universals.FACEBOOK_ID);
-                comment.putString(CommentsTable.RATING, "0");
-                comment.putString(CommentsTable.COMMENT, "I agree with this...");
-                comment.putString(CommentsTable.TIMESTAMP, String.valueOf(System.currentTimeMillis()));
-
-                dh.add(comment, new CommentsTable());*/
-
                 //ListView
                 listView = new ListView(mContext);
 
@@ -488,8 +516,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
 
         });
-
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(anchorage, 10));
     }
 
     @Override
@@ -547,7 +573,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         for (Bundle bundle : bundles) {
             MyItem myItem = new MyItem(bundle);
-            if (strings[0] == null) {
+            if (strings == null) {
+                //Do nothing
+            } else if (strings[0] == null) {
                 mClusterManager.addItem(myItem);
             } else {
                 for (String string : strings) {
@@ -770,81 +798,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     strings.add(cb.getText().toString().toLowerCase());
                 }
             }
-            String[] strs = new String[strings.size()];
-            strs = strings.toArray(strs);
-            addItems(strs);
+            if (strings.size() == 0) {
+                addItems(null);
+            } else {
+                String[] strs = new String[strings.size()];
+                strs = strings.toArray(strs);
+                addItems(strs);
+            }
         }
     }
-
-//    void closePreview(View v){
-//        findViewById(R.id.openFab).setVisibility(View.VISIBLE);
-//        final RelativeLayout rlPreview = (RelativeLayout) findViewById(R.id.rlPreview);
-//        rlPreview.animate()
-//                .alpha(0)
-//                .setInterpolator(new AccelerateInterpolator())
-//                .setDuration(300)
-//                .setListener(new Animator.AnimatorListener() {
-//                    @Override
-//                    public void onAnimationStart(Animator animation) {
-//
-//                    }
-//
-//                    @Override
-//                    public void onAnimationEnd(Animator animation) {
-//                        rlPreview.setVisibility(View.GONE);
-//
-//                    }
-//
-//                    @Override
-//                    public void onAnimationCancel(Animator animation) {
-//
-//                    }
-//
-//                    @Override
-//                    public void onAnimationRepeat(Animator animation) {
-//
-//                    }
-//                });
-//    }
-
-//    void openPreview(View v){
-//        if(mImageView.getDrawable()!=null) {
-//            if (findViewById(R.id.llFilter).getVisibility() != View.GONE) {
-//                ((ToggleButton) findViewById(R.id.filterToggle)).setChecked(false);
-//                toggleFilter(findViewById(R.id.filterToggle));
-//            }
-//
-//            findViewById(R.id.openFab).setVisibility(View.GONE);
-//            final RelativeLayout rlPreview = (RelativeLayout) findViewById(R.id.rlPreview);
-//            rlPreview.setVisibility(View.VISIBLE);
-//            rlPreview.setAlpha(0);
-//            rlPreview.animate()
-//                    .alpha(1)
-//                    .setInterpolator(new DecelerateInterpolator())
-//                    .setDuration(300)
-//                    .setListener(new Animator.AnimatorListener() {
-//                        @Override
-//                        public void onAnimationStart(Animator animation) {
-//
-//                        }
-//
-//                        @Override
-//                        public void onAnimationEnd(Animator animation) {
-//                            rlPreview.setVisibility(View.VISIBLE);
-//                        }
-//
-//                        @Override
-//                        public void onAnimationCancel(Animator animation) {
-//
-//                        }
-//
-//                        @Override
-//                        public void onAnimationRepeat(Animator animation) {
-//
-//                        }
-//                    });
-//        }
-//    }
 
     void startCardsActivity(View v) {
         Intent intent = new Intent(this, CardsActivity.class);
@@ -912,8 +874,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             } catch (IOException e) {
                 e.printStackTrace();
             }
-//            Bundle extras = data.getExtras();
-//            final Bitmap imageBitmap = (Bitmap) extras.get("data");
 
             final RelativeLayout topView = (RelativeLayout) findViewById(R.id.topView);
             final CardView cardView = new CardView(this);
@@ -1097,7 +1057,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         ImageView bmImage;
         ProgressBar progressBar;
 
-        public DownloadImageTask(ImageView bmImage, ProgressBar progressBar) {
+        DownloadImageTask(ImageView bmImage, ProgressBar progressBar) {
             this.bmImage = bmImage;
             this.progressBar = progressBar;
         }
@@ -1110,40 +1070,39 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
 
         protected Bitmap doInBackground(String... urls) {
-            String urldisplay = urls[0];
-            System.out.println(urldisplay);
-            Bitmap mIcon11 = null;
-            if (URLUtil.isValidUrl(urldisplay)) {
-                try {
-                    InputStream in = new java.net.URL(urldisplay).openStream();
-                    mIcon11 = BitmapFactory.decodeStream(in);
-                } catch (Exception e) {
-                    Log.e("Error", e.getMessage());
-                    e.printStackTrace();
-                }
+            String urlDisplay = urls[0];
+            System.out.println(urlDisplay);
+            Bitmap bitmap = null;
+            if (!URLUtil.isValidUrl(urlDisplay)) {
+                if (!universals.isBitmapInMemoryCache(urlDisplay)) {
+                    FTPClient ftpClient = new FTPClient();
+                    System.out.println("Starting connection to FTP site!");
+                    try {
+                        ftpClient.connect("host2.bakop.com");
+                        ftpClient.login("pdceng", "Anchorage_0616");
+                        ftpClient.enterLocalPassiveMode();
+                        ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
 
+                        File file = new File(Environment.getExternalStorageDirectory() + File.separator + urlDisplay);
+                        Log.d("filepath:", file.getAbsolutePath());
+                        FileOutputStream fos = new FileOutputStream(file);
+                        ftpClient.retrieveFile(urlDisplay, fos);
+                        fos.flush();
+                        fos.close();
+                        bitmap = BitmapFactory.decodeFile(file.getAbsolutePath());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    universals.addBitmapToMemoryCache(urlDisplay, bitmap);
+                }
+                bitmap = universals.getBitmapFromMemoryCache(urlDisplay);
             } else {
-                FTPClient ftpClient = new FTPClient();
-                System.out.println("Starting connection to FTP site!");
-                try {
-                    ftpClient.connect("host2.bakop.com");
-                    ftpClient.login("pdceng","Anchorage_0616");
-                    ftpClient.enterLocalPassiveMode();
-                    ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
-
-//                    urldisplay = "458226604560086_1502489214879.jpg";
-                    File file = new File(Environment.getExternalStorageDirectory() + File.separator + urldisplay);
-                    Log.d("filepath:", file.getAbsolutePath());
-                    FileOutputStream fos = new FileOutputStream(file);
-                    ftpClient.retrieveFile(urldisplay,fos);
-                    fos.flush();
-                    fos.close();
-                    mIcon11 = BitmapFactory.decodeFile(file.getAbsolutePath());
-                } catch (IOException e) {
-                    e.printStackTrace();
+                if (!universals.isBitmapInMemoryCache(urlDisplay)) {
+                    universals.addBitmapToMemoryCache(urlDisplay, universals.getBitmapFromURL(urlDisplay, 200, 200));
                 }
+                bitmap = universals.getBitmapFromMemoryCache(urlDisplay);
             }
-                return mIcon11;
+            return bitmap;
             }
 
         protected void onPostExecute(Bitmap result) {
@@ -1157,7 +1116,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Context context;
         String filename;
 
-        public SendImageFTP(Bitmap bitmap, Context context){
+        SendImageFTP(Bitmap bitmap, Context context) {
             this.bitmap = bitmap;
             this.context = context;
             this.filename = Universals.FACEBOOK_ID + "_" + String.valueOf(System.currentTimeMillis()+".jpg");
@@ -1180,13 +1139,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
 
             SimpleFTP ftp = new SimpleFTP();
+
             try {
-//                ftp.connect("files.000webhost.com",21,"unsucked-parts","Anchorage_0616");
                 ftp.connect("host2.bakop.com",21,"pdceng","Anchorage_0616");
                 ftp.bin();
-//                ftp.cwd("public_html");
-//                Log.d("ftp folder: ", ftp.pwd());
-                ftp.stor(file);
+                if (ftp.stor(file)) {
+                    // TODO: 8/16/2017 Close progress bar on main thread
+                }
                 ftp.disconnect();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -1208,90 +1167,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         String getFilename(){
             return filename;
-        }
-    }
-
-    private class ConnectMySQL extends  AsyncTask{
-        private TextView statusField,roleField;
-        private Context context;
-        private int byGetOrPost = 0;
-
-        public ConnectMySQL(TextView statusField, TextView roleField, Context context, int flag) {
-            this.statusField = statusField;
-            this.roleField = roleField;
-            this.context = context;
-            byGetOrPost = flag;
-        }
-
-        @Override
-        protected Object doInBackground(Object[] params) {
-            if(byGetOrPost==0){
-                try{
-                    String username = (String)params[0];
-                    String password = (String)params[1];
-                    String link = "unsucked-parts.000webhostapp.com";
-
-                    URL url = new URL(link);
-                    HttpClient client = new DefaultHttpClient();
-                    HttpGet request = new HttpGet();
-                    request.setURI(new URI(link));
-                    HttpResponse response = client.execute(request);
-                    BufferedReader in = new BufferedReader(
-                            new InputStreamReader(response.getEntity().getContent()));
-                    StringBuffer sb = new StringBuffer("");
-                    String line="";
-
-                    while((line = in.readLine())!=null){
-                        sb.append(line);
-                        break;
-                    }
-
-                    in.close();
-                    return sb.toString();
-
-                } catch ( URISyntaxException | IOException e) {
-                    return "Exception: " + e.getMessage();
-                }
-            } else{
-                try{
-                    String username = (String)params[0];
-                    String password = (String)params[1];
-                    String link = "unsucked-parts.000webhostapp.com";
-
-                    String data = URLEncoder.encode("username","UTF-8") + "=" + URLEncoder.encode(username,"UTF-8");
-                    data += "&"+URLEncoder.encode("password","UTF-8")+"="+URLEncoder.encode(password,"UTF-8");
-
-                    URL url = new URL(link);
-                    URLConnection conn = url.openConnection();
-
-                    conn.setDoOutput(true);
-                    OutputStreamWriter wr = new OutputStreamWriter(conn.getOutputStream());
-
-                    wr.write(data);
-                    wr.flush();
-
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-                    StringBuilder sb = new StringBuilder();
-                    String line = null;
-
-                    //Read Server Response
-                    while((line = reader.readLine())!=null){
-                        sb.append(line);
-                        break;
-                    }
-
-                    return sb.toString();
-
-
-                } catch (IOException e) {
-                    return "Exception: " + e.getMessage();
-                }
-            }
-        }
-
-        @Override
-        protected void onPostExecute(Object o) {
-            super.onPostExecute(o);
         }
     }
 

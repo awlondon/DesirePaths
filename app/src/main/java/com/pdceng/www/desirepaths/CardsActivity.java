@@ -1,24 +1,24 @@
 package com.pdceng.www.desirepaths;
 
-import android.app.Activity;
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.MotionEvent;
+import android.util.LruCache;
 import android.view.View;
 import android.widget.Toast;
 
 import com.mindorks.placeholderview.SwipeDecor;
 import com.mindorks.placeholderview.SwipePlaceHolderView;
 
-import static android.view.MotionEvent.ACTION_UP;
-
 /**
  * Created by alondon on 7/27/2017.
  */
 
 public class CardsActivity extends AppCompatActivity {
+
+    private LruCache<String, Bitmap> bitmapMemoryCache;
 
     private SwipePlaceHolderView mSwipeView;
     private Context mContext;

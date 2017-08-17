@@ -1,7 +1,6 @@
 package com.pdceng.www.desirepaths;
 
 import android.app.Activity;
-import android.app.Application;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -14,8 +13,6 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.util.ExceptionCatchingInputStream;
 import com.mindorks.placeholderview.SwipePlaceHolderView;
 import com.mindorks.placeholderview.annotations.Layout;
 import com.mindorks.placeholderview.annotations.Resolve;
@@ -32,8 +29,6 @@ import org.apache.commons.net.ftp.FTPClient;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
 
 /**
  * Created by alondon on 7/27/2017.
@@ -42,6 +37,9 @@ import java.lang.reflect.InvocationTargetException;
 
 @Layout(R.layout.card_view)
 public class PublicInputCard {
+
+    @View(R.id.progressBar)
+    private ProgressBar progressBar;
 
     @View(R.id.imageView)
     private ImageView publicInputImageView;
@@ -55,7 +53,7 @@ public class PublicInputCard {
     private PublicInput mPublicInput;
     private Context mContext;
     private SwipePlaceHolderView mSwipeView;
-    private Activity mActivity;
+    private Universals universals;
 
     public PublicInputCard(Context context, PublicInput publicInput, SwipePlaceHolderView swipeView) {
         mContext = context;
@@ -65,8 +63,8 @@ public class PublicInputCard {
 
     @Resolve
     private void onResolved(){
+        universals = new Universals(mContext);
         new DownloadImageTask(publicInputImageView).execute(mPublicInput.getUrl());
-//        Glide.with(mContext).load(mPublicInput.getUrl()).into(publicInputImageView);
         tvTitle.setText(mPublicInput.getTitle());
         tvSnippet.setText(mPublicInput.getSnippet());
     }
@@ -118,47 +116,50 @@ public class PublicInputCard {
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
+            progressBar.setVisibility(android.view.View.VISIBLE);
             publicInputImageView.setImageBitmap(null);
         }
 
         protected Bitmap doInBackground(String... urls) {
-            String urldisplay = urls[0];
-            System.out.println(urldisplay);
-            Bitmap mIcon11 = null;
-            if (URLUtil.isValidUrl(urldisplay)) {
-                try {
-                    InputStream in = new java.net.URL(urldisplay).openStream();
-                    mIcon11 = BitmapFactory.decodeStream(in);
-                } catch (Exception e) {
-                    Log.e("Error", e.getMessage());
-                    e.printStackTrace();
-                }
+            String urlDisplay = urls[0];
+            System.out.println(urlDisplay);
+            Bitmap bitmap = null;
 
+            if (!URLUtil.isValidUrl(urlDisplay)) {
+                if (!universals.isBitmapInMemoryCache(urlDisplay)) {
+                    FTPClient ftpClient = new FTPClient();
+                    System.out.println("Starting connection to FTP site!");
+                    try {
+                        ftpClient.connect("host2.bakop.com");
+                        ftpClient.login("pdceng", "Anchorage_0616");
+                        ftpClient.enterLocalPassiveMode();
+                        ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
+
+                        File file = new File(Environment.getExternalStorageDirectory() + File.separator + urlDisplay);
+                        Log.d("filepath:", file.getAbsolutePath());
+                        FileOutputStream fos = new FileOutputStream(file);
+                        ftpClient.retrieveFile(urlDisplay, fos);
+                        fos.flush();
+                        fos.close();
+                        bitmap = BitmapFactory.decodeFile(file.getAbsolutePath());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    universals.addBitmapToMemoryCache(urlDisplay, bitmap);
+                }
+                bitmap = universals.getBitmapFromMemoryCache(urlDisplay);
             } else {
-                FTPClient ftpClient = new FTPClient();
-                System.out.println("Starting connection to FTP site!");
-                try {
-                    ftpClient.connect("host2.bakop.com");
-                    ftpClient.login("pdceng","Anchorage_0616");
-                    ftpClient.enterLocalPassiveMode();
-                    ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
-
-//                    urldisplay = "458226604560086_1502489214879.jpg";
-                    File file = new File(Environment.getExternalStorageDirectory() + File.separator + urldisplay);
-                    Log.d("filepath:", file.getAbsolutePath());
-                    FileOutputStream fos = new FileOutputStream(file);
-                    ftpClient.retrieveFile(urldisplay,fos);
-                    fos.flush();
-                    fos.close();
-                    mIcon11 = BitmapFactory.decodeFile(file.getAbsolutePath());
-                } catch (IOException e) {
-                    e.printStackTrace();
+                if (!universals.isBitmapInMemoryCache(urlDisplay)) {
+                    universals.addBitmapToMemoryCache(urlDisplay, universals.getBitmapFromURL(urlDisplay, 200, 200));
                 }
+                bitmap = universals.getBitmapFromMemoryCache(urlDisplay);
             }
-            return mIcon11;
+
+            return bitmap;
         }
 
         protected void onPostExecute(Bitmap result) {
+            progressBar.setVisibility(android.view.View.GONE);
             bmImage.setImageBitmap(result);
         }
     }

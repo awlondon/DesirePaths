@@ -58,5 +58,15 @@
     "longitude":"-149.8496",
     "user":"test_user",
     "timestamp":"2017-07-30 16:48:09.394"
+  },
+  {
+    "url": "http://static.panoramio.com/photos/large/34275800.jpg",
+    "title": "Anchorage Mural",
+    "snippet": "Takes great advantage of a blank wall",
+    "sentiment": "positive",
+    "latitude": "61.181374",
+    "longitude": "-149.883118",
+    "user": "test_user",
+    "timestamp": "2017-08-16 16:48:09.394"
   }
 ]
