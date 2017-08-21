@@ -1,21 +1,32 @@
 package com.pdceng.www.desirepaths;
 
+import android.app.ProgressDialog;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
-import android.widget.Toast;
 
-import java.security.Timestamp;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+import static android.database.sqlite.SQLiteQueryBuilder.appendColumns;
 
 /**
  * Created by alondon on 8/2/2017.
@@ -23,27 +34,30 @@ import java.util.Objects;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
 
+    public static final String DATABASE_NAME = "adv_data.db";
     static final int NO_RATING_GIVEN = 0;
     static final int POS_RATING_GIVEN = 1;
     static final int NEG_RATING_GIVEN = 2;
-
-    private static DatabaseHelper instance;
-
-    Context mContext;
-
-    public static synchronized DatabaseHelper getInstance(Context context) {
-        if (instance==null)
-            instance = new DatabaseHelper(context.getApplicationContext());
-        return instance;
-    }
-
-    public static final String DATABASE_NAME = "adv_data.db";
-
     private static final int DATABASE_VERSION = 1;
+    private static DatabaseHelper instance;
+    Context mContext;
 
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
         mContext = context;
+    }
+
+    public static synchronized DatabaseHelper getInstance(Context context) {
+        if (instance == null)
+            instance = new DatabaseHelper(context.getApplicationContext());
+        return instance;
+    }
+
+    private synchronized static void appendClause(StringBuilder s, String name, String clause) {
+        if (!TextUtils.isEmpty(clause)) {
+            s.append(name);
+            s.append(clause);
+        }
     }
 
     @Override
@@ -65,7 +79,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         onCreate(db);
     }
 
-    long add(Bundle bundle, Table table) {
+    synchronized long insert(Bundle bundle, Table table) {
         SQLiteDatabase db = getWritableDatabase();
         ContentValues cv = new ContentValues();
         for (String field : table.getFields()) cv.put(field, bundle.getString(field));
@@ -74,64 +88,120 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         if (db.isOpen()) db.close();
 
+        //start PHP
+        String sql = insertSQLString(table.tableName(), table.nullColumnHack(), cv);
+        postPHP(sql);
+
         return result;
     }
 
-    Bundle getRow(Table table, String col, String...args) {
+    synchronized Bundle getRow(Table table, String col, String... args) {
         SQLiteDatabase db = getReadableDatabase();
+
         Cursor c = db.query(table.tableName(), null, col + "= ?", args, null, null, null);
-        Bundle result = new Bundle();
+        Bundle bundle = new Bundle();
         if (c != null && c.moveToFirst()) {
-            for(String field : table.getFields()){
-                result.putString(field, c.getString(c.getColumnIndexOrThrow(field)));
+            bundle.putInt(table.id(), c.getInt(c.getColumnIndexOrThrow(table.id())));
+            for (String field : table.getFields()) {
+                bundle.putString(field, c.getString(c.getColumnIndexOrThrow(field)));
             }
-            c.close();
-            if (db.isOpen()) db.close();
-            return result;
         }
-        if (db.isOpen()) db.close();
-
-        return null;
-    }
-
-    boolean isUser(String...facebook_id){
-        SQLiteDatabase db = getReadableDatabase();
-        Cursor c = db.query(UserTable.TABLE_NAME, null, UserTable.FACEBOOK_ID + "= ?", facebook_id,null,null,null);
-        boolean result = c.moveToFirst();
         c.close();
         db.close();
-        return result;
+        return bundle;
     }
 
-    Bundle[] getAllInTable(Table table){
-        Bundle[] result = new Bundle[count(table)];
+    synchronized boolean isUser(String facebook_id) {
+        JSONArray jsonArray = getJSONFromUrl(querySQLString(UserTable.TABLE_NAME, null, UserTable.FACEBOOK_ID + "= " + facebook_id));
+        return jsonArray != null;
+    }
+
+    synchronized boolean getAllFromSQL() {
+        final Table[] tables = new Table[]{new PIEntryTable(), new CommentsTable(), new UserTable()};
+        for (final Table table : tables) {
+            SQLiteDatabase db = getWritableDatabase();
+            db.delete(table.tableName(), null, null);
+        }
+        AsyncTask<Void, JSONArray[], JSONArray[]> task = new AsyncTask<Void, JSONArray[], JSONArray[]>() {
+            ProgressDialog progressDialog;
+
+            @Override
+            protected void onPreExecute() {
+                super.onPreExecute();
+                progressDialog = ProgressDialog.show(mContext, "Synchronizing...", null);
+                Universals.SYNCHRONIZING = true;
+            }
+
+            @Override
+            protected JSONArray[] doInBackground(Void... params) {
+                ArrayList<JSONArray> jsonArrays = new ArrayList<>();
+                for (Table table : tables) {
+                    String sql = querySQLString(table.tableName(), null, null);
+                    jsonArrays.add(getJSONFromUrl(sql));
+                }
+                System.out.println(jsonArrays.toString());
+                return jsonArrays.toArray(new JSONArray[jsonArrays.size()]);
+            }
+
+            @Override
+            protected void onPostExecute(JSONArray[] jsonArrays) {
+                super.onPostExecute(jsonArrays);
+                SQLiteDatabase db = getWritableDatabase();
+                int k = 0;
+                for (Table table : tables) {
+                    JSONArray jsonArray = jsonArrays[k];
+                    if (jsonArray != null) {
+                        for (int i = 0; i < jsonArray.length(); i++) {
+                            try {
+                                JSONObject jsonObject = jsonArray.getJSONObject(i);
+                                ContentValues cv = new ContentValues();
+                                cv.put(table.id(), jsonObject.getInt(table.id()));
+                                for (String field : table.getFields()) {
+                                    cv.put(field, jsonObject.getString(field));
+                                }
+                                db.insert(table.tableName(), table.nullColumnHack(), cv);
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                    k++;
+                }
+                progressDialog.dismiss();
+                ((MapsActivity) mContext).setUpCluster();
+                Universals.SYNCHRONIZING = false;
+            }
+        };
+        task.execute();
+        return true;
+    }
+
+    synchronized Bundle[] getAllInTable(Table table) {
         SQLiteDatabase db = getReadableDatabase();
+        ArrayList<Bundle> bundles = new ArrayList<>();
         Cursor c = db.query(table.tableName(), null, null, null, null, null, null);
-        if(c!=null&&c.moveToFirst()) {
-            int i = 0;
-            do{
+        if (c != null && c.moveToFirst()) {
+            do {
                 Bundle bundle = new Bundle();
-                bundle.putInt(table.id(), c.getInt(c.getColumnIndexOrThrow(PIEntryTable.ID)));
-                for (String field : table.getFields())
+                bundle.putInt(table.id(), c.getInt(c.getColumnIndexOrThrow(table.id())));
+                for (String field : table.getFields()) {
                     bundle.putString(field, c.getString(c.getColumnIndexOrThrow(field)));
-                result[i] = bundle;
-                i++;
+                }
+                bundles.add(bundle);
             } while (c.moveToNext());
         }
         c.close();
-        if (db.isOpen()) db.close();
-
-        System.out.println(result.toString());
-
-        return result;
+        db.close();
+        System.out.println("PI Entries: " + bundles.toString());
+        return bundles.toArray(new Bundle[bundles.size()]);
     }
 
-    PublicInput[] getAllPublicInput(){
+    synchronized PublicInput[] getAllPublicInput() {
         Bundle[] bundles = getAllInTable(new PIEntryTable());
         ArrayList<PublicInput> resultArrayList = new ArrayList<>();
 
         int i = 0;
-        for (Bundle bundle:bundles) {
+        for (Bundle bundle : bundles) {
             PublicInput publicInput = new PublicInput();
             publicInput.setID(String.valueOf(bundle.getInt(PIEntryTable.ID)));
             publicInput.setLatitude(Double.valueOf(bundle.getString(PIEntryTable.LATITUDE)));
@@ -148,10 +218,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         String[] userPIRatings = getUserPIRatings();
         ArrayList<PublicInput> removeList = new ArrayList<>();
-        if (userPIRatings!=null) {
+        if (userPIRatings != null) {
             for (PublicInput publicInput : resultArrayList) {
                 for (String id : userPIRatings) {
-                    if (publicInput.getID().equals(id)){
+                    if (publicInput.getID().equals(id)) {
                         removeList.add(publicInput);
                         break;
                     }
@@ -163,28 +233,28 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return resultArrayList.toArray(new PublicInput[resultArrayList.size()]);
     }
 
-    private String[] getUserPIRatings(){
+    private synchronized String[] getUserPIRatings() {
         Bundle user = getRow(new UserTable(), UserTable.FACEBOOK_ID, Universals.FACEBOOK_ID);
 
         String agree = user.getString(UserTable.PI_AGREE);
         String disagree = user.getString(UserTable.PI_DISAGREE);
         String concat = "";
-        if (agree!=null && !agree.isEmpty()) concat += agree;
-        if (disagree!=null && !disagree.isEmpty()) concat += disagree;
+        if (agree != null && !agree.isEmpty()) concat += agree;
+        if (disagree != null && !disagree.isEmpty()) concat += disagree;
 
         return !concat.isEmpty() ? concat.split(";") : null;
     }
 
-    void updateUserPIRatings(String piID, boolean agree) {
+    synchronized void updateUserPIRatings(String piID, boolean agree) {
         Bundle bundle = getRow(new UserTable(), UserTable.FACEBOOK_ID, Universals.FACEBOOK_ID);
 
         String updateString;
-        if(agree) updateString = bundle.getString(UserTable.PI_AGREE);
+        if (agree) updateString = bundle.getString(UserTable.PI_AGREE);
         else updateString = bundle.getString(UserTable.PI_DISAGREE);
 
-        if (updateString==null)updateString="";
+        if (updateString == null || Objects.equals(updateString, "null")) updateString = "";
 
-        updateString += piID+";";
+        updateString += piID + ";";
 
         //Update DB
         SQLiteDatabase db = getWritableDatabase();
@@ -192,30 +262,36 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         if (agree) cv.put(UserTable.PI_AGREE, updateString);
         else cv.put(UserTable.PI_DISAGREE, updateString);
 
+        Log.d("updated PI string", updateString);
+
         db.update(UserTable.TABLE_NAME, cv, UserTable.FACEBOOK_ID + "= ?", new String[]{Universals.FACEBOOK_ID});
 
-//        Toast.makeText(mContext, "UpdateString: " + updateString, Toast.LENGTH_SHORT).show();
         if (db.isOpen()) db.close();
+
+        String sql = updateSQLString(UserTable.TABLE_NAME, cv, UserTable.FACEBOOK_ID + "= " + Universals.FACEBOOK_ID);
+
+        postPHP(sql);
     }
 
-    long adjustRating(boolean positive, String...commentId){
-        String rating = getRow(new CommentsTable(),CommentsTable.ID,commentId[0]).getString(CommentsTable.RATING);
+    synchronized long adjustRating(boolean positive, String... commentId) {
+        System.out.println("Comment id: " + commentId);
+        String rating = getRow(new CommentsTable(), CommentsTable.ID, commentId[0]).getString(CommentsTable.RATING);
         String newRating = rating;
 
         int ratingGiven = checkRatingGiven(commentId[0]);
 
-        switch (ratingGiven){
+        switch (ratingGiven) {
             case NO_RATING_GIVEN:
-                if (positive) newRating = String.valueOf(Integer.valueOf(rating)+1);
-                else newRating = String.valueOf(Integer.valueOf(rating)-1);
+                if (positive) newRating = String.valueOf(Integer.valueOf(rating) + 1);
+                else newRating = String.valueOf(Integer.valueOf(rating) - 1);
                 break;
             case POS_RATING_GIVEN:
-                if (positive) newRating = String.valueOf(Integer.valueOf(rating)-1);
-                else newRating = String.valueOf(Integer.valueOf(rating)-2);
+                if (positive) newRating = String.valueOf(Integer.valueOf(rating) - 1);
+                else newRating = String.valueOf(Integer.valueOf(rating) - 2);
                 break;
             case NEG_RATING_GIVEN:
-                if (positive) newRating = String.valueOf(Integer.valueOf(rating)+2);
-                else newRating = String.valueOf(Integer.valueOf(rating)+1);
+                if (positive) newRating = String.valueOf(Integer.valueOf(rating) + 2);
+                else newRating = String.valueOf(Integer.valueOf(rating) + 1);
         }
 
         SQLiteDatabase db = getWritableDatabase();
@@ -223,21 +299,26 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         cv.put(CommentsTable.RATING, newRating);
 
-        long result = db.update(CommentsTable.TABLE_NAME,cv,CommentsTable.ID + "= ?",commentId);
-        if (db.isOpen()) db.close();
+        long result = db.update(CommentsTable.TABLE_NAME, cv, CommentsTable.ID + "= ?", commentId);
 
-        updateRatingsGivenByUser(positive,commentId[0]);
+        db.close();
+
+        String sql = updateSQLString(CommentsTable.TABLE_NAME, cv, CommentsTable.ID + "= " + commentId[0]);
+
+        postPHP(sql);
+
+        updateRatingsGivenByUser(positive, commentId[0]);
 
         return result;
     }
 
-    int checkRatingGiven(String commentId){
-        Bundle bundle = getRow(new UserTable(),UserTable.FACEBOOK_ID,Universals.FACEBOOK_ID);
+    synchronized int checkRatingGiven(String commentId) {
+        Bundle bundle = getRow(new UserTable(), UserTable.FACEBOOK_ID, Universals.FACEBOOK_ID);
 
         String prs = bundle.getString(UserTable.POSITIVE_RATINGS);
         String nrs = bundle.getString(UserTable.NEGATIVE_RATINGS);
         int result = NO_RATING_GIVEN;
-        if (prs!=null&& !Objects.equals(prs, "")){
+        if (prs != null && !Objects.equals(prs, "")) {
             String[] prsArray = prs.split(";");
             for (String aPrsArray : prsArray) {
                 if (Objects.equals(aPrsArray, commentId)) {
@@ -246,7 +327,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 }
             }
         }
-        if (result==NO_RATING_GIVEN && nrs!=null&&!Objects.equals(nrs, "")){
+        if (result == NO_RATING_GIVEN && nrs != null && !Objects.equals(nrs, "")) {
             String[] nrsArray = nrs.split(";");
             for (String aNrsArray : nrsArray) {
                 if (Objects.equals(aNrsArray, commentId)) {
@@ -258,21 +339,30 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return result;
     }
 
-    private void updateRatingsGivenByUser(boolean positive, String commentId) {
-        Bundle bundle = getRow(new UserTable(),UserTable.FACEBOOK_ID,Universals.FACEBOOK_ID);
+    private synchronized void updateRatingsGivenByUser(boolean positive, String commentId) {
+        Bundle bundle = getRow(new UserTable(), UserTable.FACEBOOK_ID, Universals.FACEBOOK_ID);
 
         String prs = bundle.getString(UserTable.POSITIVE_RATINGS);
         String nrs = bundle.getString(UserTable.NEGATIVE_RATINGS);
-        String commentIdAdj = commentId+";";
+        String commentIdAdj = commentId + ";";
 
-        if(prs==null)prs="";
-        if(nrs==null)nrs="";
+        System.out.println("prs: " + prs);
+        System.out.println("nrs: " + nrs);
+
+        if (prs == null || Objects.equals(prs, "null")) prs = "";
+        if (nrs == null || Objects.equals(nrs, "null")) nrs = "";
+
+        System.out.println("prs: " + prs);
+        System.out.println("nrs: " + nrs);
 
         if (prs.contains(commentIdAdj)) prs = prs.replace(commentIdAdj, "");
         else if (positive) prs = prs.concat(commentIdAdj);
 
-        if (nrs.contains(commentIdAdj)) nrs = nrs.replace(commentIdAdj,"");
+        if (nrs.contains(commentIdAdj)) nrs = nrs.replace(commentIdAdj, "");
         else if (!positive) nrs = nrs.concat(commentIdAdj);
+
+        System.out.println("prs: " + prs);
+        System.out.println("nrs: " + nrs);
 
         //Update db
         SQLiteDatabase db = getWritableDatabase();
@@ -280,35 +370,37 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         cv.put(UserTable.POSITIVE_RATINGS, prs);
         cv.put(UserTable.NEGATIVE_RATINGS, nrs);
 
-        db.update(UserTable.TABLE_NAME,cv,UserTable.FACEBOOK_ID + "= ?",new String[]{Universals.FACEBOOK_ID});
-        if (db.isOpen()) db.close();
-        System.out.println(getRow(new UserTable(),UserTable.FACEBOOK_ID, Universals.FACEBOOK_ID).toString());
+        db.update(UserTable.TABLE_NAME, cv, UserTable.FACEBOOK_ID + "= ?", new String[]{Universals.FACEBOOK_ID});
 
+        db.close();
+
+        String sql = updateSQLString(UserTable.TABLE_NAME, cv, UserTable.FACEBOOK_ID + " = " + Universals.FACEBOOK_ID);
+        System.out.println("SQL: " + sql);
+
+        postPHP(sql);
     }
 
-    List<String> getComments(String...args) {
+    synchronized List<String> getComments(String... args) {
         List<String> result = new ArrayList<>();
         SQLiteDatabase db = getReadableDatabase();
-        Cursor c = db.query(CommentsTable.TABLE_NAME, null, CommentsTable.PIEntry_ID + "= ?", args,null,null,null);
-        if(c!=null&&c.moveToFirst()){
+        Cursor c = db.query(CommentsTable.TABLE_NAME, null, CommentsTable.PIEntry_ID + "= ?", args, null, null, null);
+        int i = 0;
+        if (c != null && c.moveToFirst()) {
             do {
-//                Bundle bundle = new Bundle();
-//                bundle.putInt(CommentsTable.ID,c.getInt(c.getColumnIndexOrThrow(CommentsTable.ID)));
-//                for (String field : new CommentsTable().getFields()) {
-//                    bundle.putString(field, c.getString(c.getColumnIndexOrThrow(field)));
-//                }
                 result.add(String.valueOf(c.getInt(c.getColumnIndexOrThrow(CommentsTable.ID))));
+                i++;
             } while (c.moveToNext());
         }
+        System.out.println("found " + i + " comments!");
         c.close();
 
         HashMap<String, Integer> idsAndRatings = new HashMap<>();
         List<Integer> ratings = new ArrayList<>();
-        for (String id:result){
-            c = db.query(CommentsTable.TABLE_NAME, null, CommentsTable.ID + "= ?", new String[]{id},null,null,null);
-            if(c!=null&&c.moveToFirst()){
+        for (String id : result) {
+            c = db.query(CommentsTable.TABLE_NAME, null, CommentsTable.ID + "= ?", new String[]{id}, null, null, null);
+            if (c != null && c.moveToFirst()) {
                 int rating = Integer.valueOf(c.getString(c.getColumnIndexOrThrow(CommentsTable.RATING)));
-                idsAndRatings.put(id,rating);
+                idsAndRatings.put(id, rating);
                 ratings.add(rating);
             }
         }
@@ -316,9 +408,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         Collections.sort(ratings, Collections.<Integer>reverseOrder());
 
         result = new ArrayList<>();
-        for (Integer rating:ratings){
-            for (String id:idsAndRatings.keySet()) {
-                if(Objects.equals(idsAndRatings.get(id), rating)) {
+        for (Integer rating : ratings) {
+            for (String id : idsAndRatings.keySet()) {
+                if (Objects.equals(idsAndRatings.get(id), rating)) {
                     result.add(id);
                     idsAndRatings.remove(id);
                     break;
@@ -330,7 +422,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return result;
     }
 
-    private int count(Table table) {
+    private synchronized int count(Table table) {
         SQLiteDatabase db = getReadableDatabase();
         Cursor c = db.query(table.tableName(), null, null, null, null, null, null, null);
         int count = 0;
@@ -341,7 +433,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return count;
     }
 
-    private String createTableString(Table table){
+    private synchronized String createTableString(Table table) {
         String string = "CREATE TABLE ";
         string += table.tableName();
         string += " ( ";
@@ -353,5 +445,180 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             if (fields.indexOf(field) != fields.size() - 1) string += field + " TEXT, ";
             else string += field + " TEXT );";
         return string;
+    }
+
+    private synchronized String insertSQLString(String table, String nullColumnHack,
+                                                ContentValues initialValues) {
+        StringBuilder sql = new StringBuilder();
+        sql.append("INSERT");
+        sql.append(" INTO ");
+        sql.append(table);
+        sql.append('(');
+
+        Object[] bindArgs;
+        int size = (initialValues != null && initialValues.size() > 0)
+                ? initialValues.size() : 0;
+        if (size > 0) {
+            bindArgs = new Object[size];
+            int i = 0;
+            for (String colName : initialValues.keySet()) {
+                sql
+                        .append((i > 0) ? "," : "")
+                        .append(colName);
+
+                bindArgs[i++] = initialValues.get(colName);
+            }
+            sql
+                    .append(')')
+                    .append(" VALUES (");
+            i = 0;
+            for (String colName : initialValues.keySet()) {
+                sql
+                        .append((i > 0) ? "," : "")
+                        .append("\"")
+                        .append(initialValues.get(colName))
+                        .append("\"");
+                i++;
+            }
+        } else {
+            sql
+                    .append(nullColumnHack)
+                    .append(") VALUES (NULL");
+        }
+        sql.append(')');
+
+        return sql.toString();
+    }
+
+    private synchronized String querySQLString(
+            String table, String[] columns, String where) {
+
+        StringBuilder query = new StringBuilder(120);
+
+        query.append("SELECT ");
+
+        if (columns != null && columns.length != 0) {
+            appendColumns(query, columns);
+        } else {
+            query.append("* ");
+        }
+        query.append("FROM ");
+        query.append(table);
+        appendClause(query, " WHERE ", where);
+
+        return query.toString();
+    }
+
+    private synchronized String updateSQLString(String table, ContentValues values,
+                                                String whereClause) {
+        StringBuilder sql = new StringBuilder(120);
+        sql.append("UPDATE ");
+        sql.append(table);
+        sql.append(" SET ");
+
+        // move all bind args to one array
+        int setValuesSize = values.size();
+        int i = 0;
+        for (String colName : values.keySet()) {
+            sql.append((i > 0) ? "," : "");
+            sql.append(colName);
+            sql.append("=");
+            sql.append("\'");
+            sql.append(values.get(colName));
+            sql.append("\'");
+            i++;
+        }
+        if (!TextUtils.isEmpty(whereClause)) {
+            appendClause(sql, " WHERE ", whereClause);
+        }
+        return sql.toString();
+    }
+
+    private synchronized void postPHP(final String sql) {
+        PostPHP postPHP = new PostPHP();
+        postPHP.execute(sql);
+    }
+
+    private synchronized JSONArray getJSONFromUrl(final String sql) {
+        GetJSONFromUrl getJSONFromUrl = new GetJSONFromUrl();
+        return getJSONFromUrl.getJSONFromUrl(sql);
+    }
+
+    private class PostPHP extends AsyncTask<String, Void, String> {
+        ProgressDialog progressDialog;
+        private String finalResponse;
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            progressDialog = ProgressDialog.show(mContext, "Updating...", null);
+        }
+
+        @Override
+        protected void onPostExecute(String httpResponseMsg) {
+            super.onPostExecute(httpResponseMsg);
+            Log.d("POST result", finalResponse);
+            progressDialog.dismiss();
+        }
+
+        @Override
+        protected String doInBackground(String... params) {
+
+            HttpParse httpParse = new HttpParse();
+            String httpUrl = "http://www.desirepaths.xyz/Post.php";
+
+            HashMap<String, String> hashMap = new HashMap<>();
+            hashMap.put("sql", params[0]);
+
+            finalResponse = httpParse.postRequest(hashMap, httpUrl);
+
+            return finalResponse;
+
+        }
+    }
+
+    // JSON parse class started from here.
+    private class GetJSONFromUrl {
+        public Context context;
+        String JSONResult;
+        String httpUrl = "http://www.desirepaths.xyz/Get.php";
+
+        GetJSONFromUrl() {
+        }
+
+
+        JSONArray getJSONFromUrl(final String sql) {
+
+            JSONArray result = null;
+            ExecutorService executorService = Executors.newSingleThreadExecutor();
+            Future<JSONArray> urlGetResult = executorService.submit(new Callable<JSONArray>() {
+                @Override
+                public JSONArray call() throws Exception {
+                    HttpParse httpParse = new HttpParse();
+                    HashMap<String, String> hashMap = new HashMap<>();
+                    hashMap.put("sql", sql);
+                    JSONResult = httpParse.postRequest(hashMap, httpUrl);
+
+                    JSONArray jsonArray = null;
+                    if (JSONResult != null) {
+
+                        try {
+                            jsonArray = new JSONArray(JSONResult);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                            jsonArray = null;
+                        }
+                    }
+                    return jsonArray;
+                }
+            });
+            try {
+                result = urlGetResult.get();
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+            }
+            executorService.shutdown();
+            return result;
+        }
     }
 }

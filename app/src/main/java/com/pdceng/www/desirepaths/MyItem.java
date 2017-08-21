@@ -1,7 +1,5 @@
 package com.pdceng.www.desirepaths;
 
-import android.app.Activity;
-import android.content.Context;
 import android.os.Bundle;
 
 import com.google.android.gms.maps.model.BitmapDescriptor;
@@ -9,7 +7,6 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.maps.android.clustering.ClusterItem;
 
-import java.net.URL;
 import java.sql.Timestamp;
 
 /**
@@ -53,7 +50,6 @@ public class MyItem implements ClusterItem {
 
         mUser = bundle.getString(PIEntryTable.USER);
 
-//        System.out.println(bundle.getString(PIEntryTable.TIMESTAMP));
         mTimestamp = Timestamp.valueOf(bundle.getString(PIEntryTable.TIMESTAMP));
 
         mId = bundle.getInt(PIEntryTable.ID);

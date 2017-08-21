@@ -9,7 +9,6 @@ import android.support.v4.app.FragmentActivity;
 import android.util.Base64;
 import android.util.Log;
 import android.view.View;
-import android.widget.Toast;
 
 import com.facebook.AccessToken;
 import com.facebook.CallbackManager;
@@ -18,7 +17,6 @@ import com.facebook.FacebookException;
 import com.facebook.FacebookSdk;
 import com.facebook.GraphRequest;
 import com.facebook.GraphResponse;
-import com.facebook.login.LoginManager;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
 
@@ -37,10 +35,9 @@ import java.util.Arrays;
 public class FacebookLogin extends FragmentActivity {
     String email,name,first_name,last_name,facebook_id;
     Bundle parameters;
-    private CallbackManager callbackManager;
     LoginButton login_button;
-
     DatabaseHelper dh = new DatabaseHelper(this);
+    private CallbackManager callbackManager;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -140,25 +137,25 @@ public class FacebookLogin extends FragmentActivity {
         callbackManager.onActivityResult(requestCode, resultCode, data);
     }
 
-    boolean checkUser(String name, String...facebook_id){
+    boolean checkUser(String name, String facebook_id) {
 
         if(dh.isUser(facebook_id)){
-            Universals.FACEBOOK_ID = facebook_id[0];
+            Universals.FACEBOOK_ID = facebook_id;
             Universals.NAME = name;
             System.out.println("user exists!");
-            System.out.println("facebook_id: " + facebook_id[0]);
+            System.out.println("facebook_id: " + facebook_id);
             System.out.println("name: "+ name);
         } else {
             Timestamp timestamp = new Timestamp(System.currentTimeMillis());
             System.out.println("user is being created!");
-            System.out.println("facebook_id: " + facebook_id[0]);
+            System.out.println("facebook_id: " + facebook_id);
             System.out.println("name: "+ name);
             Bundle bundle = new Bundle();
-            bundle.putString(UserTable.FACEBOOK_ID, facebook_id[0]);
+            bundle.putString(UserTable.FACEBOOK_ID, facebook_id);
             bundle.putString(UserTable.NAME, name);
             bundle.putString(UserTable.REGISTERED_TIMESTAMP, timestamp.toString());
-            dh.add(bundle, new UserTable());
-            Universals.FACEBOOK_ID = facebook_id[0];
+            dh.insert(bundle, new UserTable());
+            Universals.FACEBOOK_ID = facebook_id;
             Universals.NAME = name;
         }
         Bundle[] users = dh.getAllInTable(new UserTable());

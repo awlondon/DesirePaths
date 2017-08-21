@@ -20,6 +20,7 @@ import java.net.UnknownHostException;
 public class Universals {
     static String FACEBOOK_ID;
     static String NAME;
+    static boolean SYNCHRONIZING = false;
     private static LruCache<String, Bitmap> bitmapMemoryCache;
     private static Universals instance;
     Context mContext;

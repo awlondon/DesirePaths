@@ -16,10 +16,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -29,6 +26,8 @@ import java.util.concurrent.TimeUnit;
  */
 
 public class CommentsAdapter extends BaseAdapter {
+    private static final int GET_BUNDLES_COMPLETE = 0;
+
     TextView tvRating;
     Bundle bundle;
 
@@ -39,6 +38,13 @@ public class CommentsAdapter extends BaseAdapter {
     LayoutInflater inflater=null;
     String id;
     ImageView ivProfile;
+
+    Bundle userBundle;
+    int ratingGiven;
+
+    TextView tvUser;
+    TextView tvComment;
+    TextView tvDate;
 
 
 //    public CommentsAdapter(@NonNull Context context, @LayoutRes int resource, @NonNull List<Bundle> objects) {
@@ -75,33 +81,35 @@ public class CommentsAdapter extends BaseAdapter {
     @NonNull
     @Override
     public View getView(final int position, @Nullable View convertView, @NonNull ViewGroup parent) {
+
         dh = new DatabaseHelper(mContext);
         if(convertView==null)
             convertView = inflater.inflate(R.layout.comment,null);
 
         id = mData.get(position);
-        bundle = dh.getRow(new CommentsTable(),CommentsTable.ID, id);
 
-        Bundle userBundle = dh.getRow(new UserTable(), UserTable.FACEBOOK_ID, bundle.getString(CommentsTable.USER));
+//        checkSync();
+        bundle = dh.getRow(new CommentsTable(), CommentsTable.ID, id);
+        userBundle = dh.getRow(new UserTable(), UserTable.FACEBOOK_ID, bundle.getString(CommentsTable.FACEBOOK_ID));
 
         tvRating = (TextView) convertView.findViewById(R.id.rating);
         TextView tvUser = (TextView) convertView.findViewById(R.id.user);
         TextView tvComment = (TextView) convertView.findViewById(R.id.comment);
         TextView tvDate = (TextView) convertView.findViewById(R.id.date);
 
-        ImageButton ibUp = (ImageButton) convertView.findViewById(R.id.upArrow);
-        ImageButton ibDown = (ImageButton) convertView.findViewById(R.id.downArrow);
-
-        ivProfile = (ImageView) convertView.findViewById(R.id.ivProfile);
-
         tvRating.setText(bundle.getString(CommentsTable.RATING));
         tvComment.setText(bundle.getString(CommentsTable.COMMENT));
         tvUser.setText(userBundle.getString(UserTable.NAME));
         tvDate.setText(getDuration(bundle.getString(CommentsTable.TIMESTAMP)));
 
+        ImageButton ibUp = (ImageButton) convertView.findViewById(R.id.upArrow);
+        ImageButton ibDown = (ImageButton) convertView.findViewById(R.id.downArrow);
+
+        ivProfile = (ImageView) convertView.findViewById(R.id.ivProfile);
+
         new DownloadImageTask(ivProfile).execute(getFacebookProfileURL(userBundle.getString(UserTable.FACEBOOK_ID)));
 
-        int ratingGiven = dh.checkRatingGiven(mData.get(position));
+        ratingGiven = dh.checkRatingGiven(mData.get(position));
         switch (ratingGiven){
             case DatabaseHelper.NO_RATING_GIVEN:
                 ibDown.setAlpha(.5f);
@@ -199,10 +207,20 @@ public class CommentsAdapter extends BaseAdapter {
         return "https://graph.facebook.com/" + userID + "/picture?type=large";
     }
 
+    private void checkSync() {
+        if (Universals.SYNCHRONIZING) {
+            try {
+                wait(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
         ImageView bmImage;
 
-        public DownloadImageTask(ImageView bmImage) {
+        DownloadImageTask(ImageView bmImage) {
             this.bmImage = bmImage;
         }
 

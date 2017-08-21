@@ -2,6 +2,7 @@ package com.pdceng.www.desirepaths;
 
 import android.Manifest;
 import android.animation.Animator;
+import android.app.ProgressDialog;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
@@ -61,15 +62,12 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
-import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.Dash;
 import com.google.android.gms.maps.model.Dot;
 import com.google.android.gms.maps.model.Gap;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.PatternItem;
-import com.google.android.gms.maps.model.PolygonOptions;
-import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.maps.model.TileOverlay;
 import com.google.android.gms.maps.model.TileOverlayOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -94,7 +92,6 @@ import java.io.InputStream;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Scanner;
@@ -128,12 +125,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private static final List<PatternItem> PATTERN_POLYGON_BETA =
             Arrays.asList(DOT, GAP, DASH, GAP);
     private static int DEFAULT_ZOOM = 10;
-    private final LatLng startingPoint = new LatLng(64.836803, -147.802731);
+    private final LatLng startingPoint = new LatLng(61.2185, -149.8996);
     List<LatLng> lls = new ArrayList<>();
     Context mContext = this;
     CommentsAdapter adapter;
     ListView listView;
-    DatabaseHelper dh = new DatabaseHelper(mContext);
+    DatabaseHelper dh = new DatabaseHelper(this);
     private GoogleMap mMap;
     private ClusterManager<MyItem> mClusterManager;
     private HeatmapTileProvider mProvider;
@@ -162,6 +159,21 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         universals = new Universals(this);
+        dh.getAllFromSQL();
+//        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
+//        final Runnable runnable = new Runnable() {
+//            @Override
+//            public void run() {
+//                dh.getAllFromSQL();
+//            }
+//        };
+//        final ScheduledFuture<?> runnableHandler = executorService.scheduleAtFixedRate(runnable,10,10,TimeUnit.SECONDS);
+//        executorService.schedule(new Runnable() {
+//                                     @Override
+//                                     public void run() {
+//                                         runnableHandler.cancel(true);
+//                                     }
+//                                 },100,TimeUnit.SECONDS);
         bringUpMap();
     }
 
@@ -183,12 +195,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         checkPermission(Manifest.permission.INTERNET, mStoragePermissionGranted);
 
-        /*try {
-            Bundle bundle = dh.getAllInTable(new PIEntryTable())[0];
-        } catch(ArrayIndexOutOfBoundsException exception){
-            Log.e("exception",exception.getMessage());
-            addPIEntriesToDatabase();
-        }*/
+//        if (dh.getAllInTable(new PIEntryTable())==null) {
+//            addPIEntriesToDatabase();
+//        }
 
 
 //        new ConnectMySQL(null,null,this,1).execute("id2380250_alexlondon","Anchorage_0616");
@@ -202,7 +211,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(startingPoint, 12));
         mMap.setOnInfoWindowClickListener(this);
 
-        LatLng[] linePoints = new LatLng[]{
+        //Add geometry to Fairbanks
+       /* LatLng[] linePoints = new LatLng[]{
                 new LatLng(64.834832, -147.707030),
                 new LatLng(64.835818, -147.712352),
                 new LatLng(64.836438, -147.721879),
@@ -245,13 +255,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .strokeColor(Color.RED));
 
         mMap.addPolygon((new PolygonOptions())
-                .add(polygonPoints).strokeColor(Color.DKGRAY).strokeWidth(3f).geodesic(true));
+                .add(polygonPoints).strokeColor(Color.DKGRAY).strokeWidth(3f).geodesic(true));*/
 
         checkPermission(Manifest.permission.ACCESS_FINE_LOCATION, mLocationPermissionGranted);
-
-        if (setUpCluster()) {
-            Collection<MyItem> markers = clusterManagerAlgorithm.getItems();
-        }
 
         mMap.setOnCameraMoveStartedListener(new GoogleMap.OnCameraMoveStartedListener() {
             @Override
@@ -284,6 +290,58 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
 
+    }
+
+    @Override
+    public void onInfoWindowClick(Marker marker) {
+        Toast.makeText(MapsActivity.this, marker.getPosition().toString(), Toast.LENGTH_SHORT).show();
+    }
+
+    void setCommentsAdapter(String id) {
+        System.out.println("id: " + id);
+        List<String> commentIds = dh.getComments(id);
+        System.out.println("commentIds: " + commentIds.toString());
+        adapter = new CommentsAdapter(mContext, commentIds);
+        listView.setAdapter(adapter);
+        adapter.notifyDataSetChanged();
+        listView.setAlpha(0f);
+        listView.animate()
+                .alpha(1f)
+                .setDuration(300)
+                .setListener(new Animator.AnimatorListener() {
+                    @Override
+                    public void onAnimationStart(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationCancel(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationRepeat(Animator animation) {
+
+                    }
+                });
+    }
+
+    public boolean setUpCluster() {
+        mClusterManager = new ClusterManager<>(this, mMap);
+        clusterManagerAlgorithm = new NonHierarchicalDistanceBasedAlgorithm<>();
+        mClusterManager.setAlgorithm(clusterManagerAlgorithm);
+        mClusterManager.setRenderer(new OwnIconRendered(this, mMap, mClusterManager));
+        mMap.setOnCameraIdleListener(mClusterManager);
+        mMap.setOnMarkerClickListener(mClusterManager);
+        addItems(new String[]{null});
+
+//        Collection<MyItem> markers = clusterManagerAlgorithm.getItems();
+
         mClusterManager.setOnClusterItemClickListener(new ClusterManager.OnClusterItemClickListener<MyItem>() {
             @Override
             public boolean onClusterItemClick(final MyItem myItem) {
@@ -294,6 +352,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     toggleFilter(tb);
                 }
 
+                //Creates CardView
                 final RelativeLayout topView = (RelativeLayout) findViewById(R.id.topView);
                 final CardView cardView = new CardView(mContext);
 
@@ -311,6 +370,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                 topView.addView(cardView);
 
+                //"Creates" grey background
                 RelativeLayout relativeLayout = new RelativeLayout(mContext);
                 relativeLayout.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
@@ -325,16 +385,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 entryLayout.setOrientation(VERTICAL);
                 entryLayout.setBackgroundColor(getColor(R.color.white));
 
+                //Creates main ImageView
                 mImageView = new ImageView(mContext);
                 ViewGroup.LayoutParams ivParams = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 700);
                 mImageView.setLayoutParams(ivParams);
                 mImageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
 
+                //Creates circular progress bar
                 RelativeLayout.LayoutParams pbParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
                 pbParams.addRule(RelativeLayout.CENTER_IN_PARENT);
                 ProgressBar progressBar = new ProgressBar(mContext);
                 progressBar.setLayoutParams(pbParams);
 
+                //Creates TextViews
                 LinearLayout.LayoutParams snippetParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
                 snippetParams.setMargins(margin * 2, 0, 0, 0);
 
@@ -470,8 +533,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                 bundle.putString(CommentsTable.RATING, "0");
                                 bundle.putString(CommentsTable.COMMENT, etComment.getText().toString());
                                 bundle.putString(CommentsTable.TIMESTAMP, String.valueOf(System.currentTimeMillis()));
-                                bundle.putString(CommentsTable.USER, Universals.FACEBOOK_ID);
-                                dh.add(bundle, new CommentsTable());
+                                bundle.putString(CommentsTable.FACEBOOK_ID, Universals.FACEBOOK_ID);
+                                dh.insert(bundle, new CommentsTable());
                                 cardView.removeView(linearLayout1);
                                 setCommentsAdapter(String.valueOf(myItem.getId()));
                                 inputMethodManager.toggleSoftInputFromWindow(linearLayout1.getApplicationWindowToken(), InputMethodManager.SHOW_FORCED, 0);
@@ -516,59 +579,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
 
         });
-    }
 
-    @Override
-    public void onInfoWindowClick(Marker marker) {
-        Toast.makeText(MapsActivity.this, marker.getPosition().toString(), Toast.LENGTH_SHORT).show();
-    }
-
-    void setCommentsAdapter(String id) {
-        List<String> commentIds = dh.getComments(id);
-        adapter = new CommentsAdapter(mContext, commentIds);
-        listView.setAdapter(adapter);
-        adapter.notifyDataSetChanged();
-        listView.setAlpha(0f);
-        listView.animate()
-                .alpha(1f)
-                .setDuration(300)
-                .setListener(new Animator.AnimatorListener() {
-                    @Override
-                    public void onAnimationStart(Animator animation) {
-
-                    }
-
-                    @Override
-                    public void onAnimationEnd(Animator animation) {
-
-                    }
-
-                    @Override
-                    public void onAnimationCancel(Animator animation) {
-
-                    }
-
-                    @Override
-                    public void onAnimationRepeat(Animator animation) {
-
-                    }
-                });
-    }
-
-    private boolean setUpCluster() {
-        mClusterManager = new ClusterManager<>(this, mMap);
-        clusterManagerAlgorithm = new NonHierarchicalDistanceBasedAlgorithm<>();
-        mClusterManager.setAlgorithm(clusterManagerAlgorithm);
-        mClusterManager.setRenderer(new OwnIconRendered(this, mMap, mClusterManager));
-        mMap.setOnCameraIdleListener(mClusterManager);
-        mMap.setOnMarkerClickListener(mClusterManager);
-        addItems(new String[]{null});
         return true;
     }
 
     private void addItems(String... strings) {
         Bundle[] bundles = dh.getAllInTable(new PIEntryTable());
-
         mClusterManager.clearItems();
 
         for (Bundle bundle : bundles) {
@@ -826,7 +842,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             bundle.putString(PIEntryTable.SNIPPET, publicInput.getSnippet());
             bundle.putString(PIEntryTable.USER, publicInput.getUser());
             bundle.putString(PIEntryTable.TIMESTAMP, publicInput.getTimestamp());
-            dh.add(bundle, new PIEntryTable());
+            dh.insert(bundle, new PIEntryTable());
         }
 
         //test user
@@ -834,7 +850,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Bundle bundle = new Bundle();
         bundle.putString(UserTable.FACEBOOK_ID, "test_user");
         bundle.putString(UserTable.REGISTERED_TIMESTAMP, timestamp.toString());
-        dh.add(bundle, new UserTable());
+        dh.insert(bundle, new UserTable());
     }
 
     void togglePreviewSize(View v) {
@@ -1014,7 +1030,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                         bundle.putString(PIEntryTable.SNIPPET, snippetEdit.getText().toString());
                                         bundle.putString(PIEntryTable.USER, Universals.NAME);
                                         bundle.putString(PIEntryTable.TIMESTAMP, new Timestamp(System.currentTimeMillis()).toString());
-                                        dh.add(bundle, new PIEntryTable());
+                                        dh.insert(bundle, new PIEntryTable());
                                         addItems(new String[]{null});
                                     }
                                 }
@@ -1052,7 +1068,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
-
     private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
         ImageView bmImage;
         ProgressBar progressBar;
@@ -1078,8 +1093,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     FTPClient ftpClient = new FTPClient();
                     System.out.println("Starting connection to FTP site!");
                     try {
-                        ftpClient.connect("host2.bakop.com");
-                        ftpClient.login("pdceng", "Anchorage_0616");
+                        ftpClient.connect("153.92.6.4");
+                        ftpClient.login(getString(R.string.ftp_username), getString(R.string.ftp_password));
                         ftpClient.enterLocalPassiveMode();
                         ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
 
@@ -1115,6 +1130,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Bitmap bitmap;
         Context context;
         String filename;
+        ProgressDialog progressDialog;
 
         SendImageFTP(Bitmap bitmap, Context context) {
             this.bitmap = bitmap;
@@ -1141,7 +1157,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             SimpleFTP ftp = new SimpleFTP();
 
             try {
-                ftp.connect("host2.bakop.com",21,"pdceng","Anchorage_0616");
+                ftp.connect("153.92.6.4", 21, getString(R.string.ftp_username), getString(R.string.ftp_password));
                 ftp.bin();
                 if (ftp.stor(file)) {
                     // TODO: 8/16/2017 Close progress bar on main thread
@@ -1158,11 +1174,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
+            progressDialog = ProgressDialog.show(mContext, "Uploading image", null, true);
         }
 
         @Override
         protected void onPostExecute(String s) {
             super.onPostExecute(s);
+            progressDialog.dismiss();
         }
 
         String getFilename(){
