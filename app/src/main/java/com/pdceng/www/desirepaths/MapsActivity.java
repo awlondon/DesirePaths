@@ -92,9 +92,11 @@ import java.io.InputStream;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Scanner;
+import java.util.concurrent.ScheduledExecutorService;
 
 import static android.graphics.Color.GRAY;
 import static android.graphics.Color.RED;
@@ -102,6 +104,7 @@ import static android.widget.LinearLayout.VERTICAL;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnInfoWindowClickListener /*, GoogleMap.OnPoiClickListener */ {
 
+    static final int delay_getAll = 30;
     private static final String TAG = "tag";
     private static final int REQUEST_IMAGE_CAPTURE = 1;
     private static final int COLOR_BLACK_ARGB = 0xff000000;
@@ -131,6 +134,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     CommentsAdapter adapter;
     ListView listView;
     DatabaseHelper dh = new DatabaseHelper(this);
+    ScheduledExecutorService executorService;
+    Runnable getAllFromSQL;
     private GoogleMap mMap;
     private ClusterManager<MyItem> mClusterManager;
     private HeatmapTileProvider mProvider;
@@ -160,20 +165,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         super.onCreate(savedInstanceState);
         universals = new Universals(this);
         dh.getAllFromSQL();
-//        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
-//        final Runnable runnable = new Runnable() {
-//            @Override
-//            public void run() {
-//                dh.getAllFromSQL();
-//            }
-//        };
-//        final ScheduledFuture<?> runnableHandler = executorService.scheduleAtFixedRate(runnable,10,10,TimeUnit.SECONDS);
-//        executorService.schedule(new Runnable() {
-//                                     @Override
-//                                     public void run() {
-//                                         runnableHandler.cancel(true);
-//                                     }
-//                                 },100,TimeUnit.SECONDS);
         bringUpMap();
     }
 
@@ -290,62 +281,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
 
-    }
-
-    @Override
-    public void onInfoWindowClick(Marker marker) {
-        Toast.makeText(MapsActivity.this, marker.getPosition().toString(), Toast.LENGTH_SHORT).show();
-    }
-
-    void setCommentsAdapter(String id) {
-        System.out.println("id: " + id);
-        List<String> commentIds = dh.getComments(id);
-        System.out.println("commentIds: " + commentIds.toString());
-        adapter = new CommentsAdapter(mContext, commentIds);
-        listView.setAdapter(adapter);
-        adapter.notifyDataSetChanged();
-        listView.setAlpha(0f);
-        listView.animate()
-                .alpha(1f)
-                .setDuration(300)
-                .setListener(new Animator.AnimatorListener() {
-                    @Override
-                    public void onAnimationStart(Animator animation) {
-
-                    }
-
-                    @Override
-                    public void onAnimationEnd(Animator animation) {
-
-                    }
-
-                    @Override
-                    public void onAnimationCancel(Animator animation) {
-
-                    }
-
-                    @Override
-                    public void onAnimationRepeat(Animator animation) {
-
-                    }
-                });
-    }
-
-    public boolean setUpCluster() {
         mClusterManager = new ClusterManager<>(this, mMap);
-        clusterManagerAlgorithm = new NonHierarchicalDistanceBasedAlgorithm<>();
-        mClusterManager.setAlgorithm(clusterManagerAlgorithm);
-        mClusterManager.setRenderer(new OwnIconRendered(this, mMap, mClusterManager));
-        mMap.setOnCameraIdleListener(mClusterManager);
-        mMap.setOnMarkerClickListener(mClusterManager);
-        addItems(new String[]{null});
-
-//        Collection<MyItem> markers = clusterManagerAlgorithm.getItems();
 
         mClusterManager.setOnClusterItemClickListener(new ClusterManager.OnClusterItemClickListener<MyItem>() {
             @Override
             public boolean onClusterItemClick(final MyItem myItem) {
-
                 ToggleButton tb = (ToggleButton) findViewById(R.id.filterToggle);
                 if (tb.isChecked()) {
                     tb.setChecked(false);
@@ -440,6 +380,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 fab.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
+                        dh.getAllFromSQL();
                         cardView.animate()
                                 .translationY(topView.getHeight())
                                 .setInterpolator(new AccelerateDecelerateInterpolator())
@@ -453,6 +394,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                     @Override
                                     public void onAnimationEnd(Animator animation) {
                                         cardView.setVisibility(View.GONE);
+
                                     }
 
                                     @Override
@@ -579,6 +521,57 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
 
         });
+
+    }
+
+    @Override
+    public void onInfoWindowClick(Marker marker) {
+        Toast.makeText(MapsActivity.this, marker.getPosition().toString(), Toast.LENGTH_SHORT).show();
+    }
+
+    void setCommentsAdapter(String id) {
+        System.out.println("id: " + id);
+        List<String> commentIds = dh.getComments(id);
+        System.out.println("commentIds: " + commentIds.toString());
+        adapter = new CommentsAdapter(mContext, commentIds);
+        listView.setAdapter(adapter);
+        adapter.notifyDataSetChanged();
+        listView.setAlpha(0f);
+        listView.animate()
+                .alpha(1f)
+                .setDuration(300)
+                .setListener(new Animator.AnimatorListener() {
+                    @Override
+                    public void onAnimationStart(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationCancel(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationRepeat(Animator animation) {
+
+                    }
+                });
+    }
+
+    public boolean setUpCluster() {
+        clusterManagerAlgorithm = new NonHierarchicalDistanceBasedAlgorithm<>();
+        mClusterManager.setAlgorithm(clusterManagerAlgorithm);
+        mClusterManager.setRenderer(new OwnIconRendered(this, mMap, mClusterManager));
+        mMap.setOnCameraIdleListener(mClusterManager);
+        mMap.setOnMarkerClickListener(mClusterManager);
+        addItems(new String[]{null});
+
+        Collection<MyItem> markers = clusterManagerAlgorithm.getItems();
 
         return true;
     }

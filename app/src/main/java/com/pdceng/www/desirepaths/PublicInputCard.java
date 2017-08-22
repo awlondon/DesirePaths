@@ -150,7 +150,7 @@ public class PublicInputCard {
                 bitmap = universals.getBitmapFromMemoryCache(urlDisplay);
             } else {
                 if (!universals.isBitmapInMemoryCache(urlDisplay)) {
-                    universals.addBitmapToMemoryCache(urlDisplay, universals.getBitmapFromURL(urlDisplay, 200, 200));
+                    universals.addBitmapToMemoryCache(urlDisplay, universals.getBitmapFromURL(urlDisplay, 100, 100));
                 }
                 bitmap = universals.getBitmapFromMemoryCache(urlDisplay);
             }

@@ -68,7 +68,7 @@ public class FacebookLogin extends FragmentActivity {
             GraphRequest graphRequest = GraphRequest.newMeRequest(AccessToken.getCurrentAccessToken(), new GraphRequest.GraphJSONObjectCallback() {
                 @Override
                 public void onCompleted(JSONObject object, GraphResponse response) {
-                    Log.d("JSON", "" + response.getJSONObject().toString());
+//                    Log.d("JSON", "" + response.getJSONObject().toString());
 
                     try {
                         name = object.getString("name");

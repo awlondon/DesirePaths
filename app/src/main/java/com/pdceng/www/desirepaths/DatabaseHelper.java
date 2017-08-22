@@ -10,6 +10,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -45,6 +46,20 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
         mContext = context;
+
+//        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
+//        Runnable getAllFromSQL = new Runnable() {
+//            @Override
+//            public void run() {
+//                try {
+//                    getAllFromSQL();
+//                } catch (Exception e){
+//                    e.printStackTrace();
+//                    Log.e("Exception from SQL", e.toString());
+//                }
+//            }
+//        };
+//        executorService.scheduleWithFixedDelay(getAllFromSQL, 0, 10, TimeUnit.SECONDS);
     }
 
     public static synchronized DatabaseHelper getInstance(Context context) {
@@ -65,6 +80,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL(createTableString(new PIEntryTable()));
         db.execSQL(createTableString(new CommentsTable()));
         db.execSQL(createTableString(new UserTable()));
+
     }
 
     @Override
@@ -128,7 +144,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             @Override
             protected void onPreExecute() {
                 super.onPreExecute();
-                progressDialog = ProgressDialog.show(mContext, "Synchronizing...", null);
+                Toast.makeText(mContext, "Synchronizing...", Toast.LENGTH_SHORT).show();
                 Universals.SYNCHRONIZING = true;
             }
 
@@ -167,7 +183,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     }
                     k++;
                 }
-                progressDialog.dismiss();
                 ((MapsActivity) mContext).setUpCluster();
                 Universals.SYNCHRONIZING = false;
             }
@@ -551,14 +566,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            progressDialog = ProgressDialog.show(mContext, "Updating...", null);
+            Toast.makeText(mContext, "Updating...", Toast.LENGTH_SHORT).show();
         }
 
         @Override
         protected void onPostExecute(String httpResponseMsg) {
             super.onPostExecute(httpResponseMsg);
             Log.d("POST result", finalResponse);
-            progressDialog.dismiss();
         }
 
         @Override
