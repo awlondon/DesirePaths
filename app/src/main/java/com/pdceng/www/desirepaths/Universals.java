@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Rect;
+import android.net.Uri;
 import android.util.Log;
 import android.util.LruCache;
 
@@ -17,8 +18,9 @@ import java.net.UnknownHostException;
  */
 
 public class Universals {
-    static String FACEBOOK_ID;
+    static String SOCIAL_MEDIA_ID;
     static String NAME;
+    static Uri PHOTO_URL = null;
     static boolean SYNCHRONIZING = false;
     private static LruCache<String, Bitmap> bitmapMemoryCache;
     private static Universals instance;

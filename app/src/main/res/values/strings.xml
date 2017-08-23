@@ -10,4 +10,7 @@
     <string name="noComments">There are no comments, yet</string>
     <string name="ftp_password">Bg1f1Kv9zwHL</string>
     <string name="ftp_username">u665689347</string>
+    <string name="google_cloud_messaging_server_api_key">AIzaSyC-SmjaxaeSR0q4XARkD8ZJSG2OENFurjo</string>
+    <string name="google_cloud_messaging_sender_id">107255467560</string>
+    <string name="google_sign_in_sha_1">4F:53:F6:F1:FE:03:BC:60:14:AC:00:79:0D:23:09:FC:AC:2B:06:24</string>
 </resources>

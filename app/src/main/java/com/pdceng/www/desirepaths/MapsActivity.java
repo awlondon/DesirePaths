@@ -238,7 +238,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
 //        new ConnectMySQL(null,null,this,1).execute("id2380250_alexlondon","Anchorage_0616");
-//        System.out.println(dh.getRow(new UserTable(),UserTable.FACEBOOK_ID, Universals.FACEBOOK_ID).toString());
+//        System.out.println(dh.getRow(new UserTable(),UserTable.SOCIAL_MEDIA_ID, Universals.SOCIAL_MEDIA_ID).toString());
     }
 
 
@@ -521,7 +521,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                 bundle.putString(CommentsTable.RATING, "0");
                                 bundle.putString(CommentsTable.COMMENT, etComment.getText().toString());
                                 bundle.putString(CommentsTable.TIMESTAMP, String.valueOf(System.currentTimeMillis()));
-                                bundle.putString(CommentsTable.FACEBOOK_ID, Universals.FACEBOOK_ID);
+                                bundle.putString(CommentsTable.FACEBOOK_ID, Universals.SOCIAL_MEDIA_ID);
                                 dh.insert(bundle, new CommentsTable());
                                 cardView.removeView(linearLayout1);
                                 setCommentsAdapter(String.valueOf(myItem.getId()));
@@ -887,7 +887,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         //test user
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         Bundle bundle = new Bundle();
-        bundle.putString(UserTable.FACEBOOK_ID, "test_user");
+        bundle.putString(UserTable.SOCIAL_MEDIA_ID, "test_user");
         bundle.putString(UserTable.REGISTERED_TIMESTAMP, timestamp.toString());
         dh.insert(bundle, new UserTable());
     }
@@ -1178,7 +1178,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         SendImageFTP(Bitmap bitmap, Context context) {
             this.bitmap = bitmap;
             this.context = context;
-            this.filename = Universals.FACEBOOK_ID + "_" + String.valueOf(System.currentTimeMillis()+".jpg");
+            this.filename = Universals.SOCIAL_MEDIA_ID + "_" + String.valueOf(System.currentTimeMillis() + ".jpg");
         }
 
         @Override

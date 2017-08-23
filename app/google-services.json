@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "107255467560",
+    "project_id": "desirepaths-177100"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:107255467560:android:e7ed6d9e9810d5fe",
+        "android_client_info": {
+          "package_name": "com.pdceng.www.desirepaths"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "107255467560-17ssgsi7kd6cat9coaa58grrn9s9bkc8.apps.googleusercontent.com",
+          "client_type": 3
+        },
+        {
+          "client_id": "107255467560-fihd4qsuc18ggliqjoubj222nn8p3b7c.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.pdceng.www.desirepaths",
+            "certificate_hash": "4f53f6f1fe03bc6014ac00790d2309fcac2b0624"
+          }
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAMedAM1A-RbL6wyaqSf6R2eh_6kchcyBo"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 1
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

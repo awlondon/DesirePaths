@@ -2,12 +2,10 @@ package com.pdceng.www.desirepaths;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,7 +14,6 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import java.io.InputStream;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -46,6 +43,8 @@ public class CommentsAdapter extends BaseAdapter {
     TextView tvComment;
     TextView tvDate;
 
+    Universals universals;
+
 
 //    public CommentsAdapter(@NonNull Context context, @LayoutRes int resource, @NonNull List<Bundle> objects) {
 //        super(context, resource, objects);
@@ -57,6 +56,7 @@ public class CommentsAdapter extends BaseAdapter {
         this.mData = mData;
         this.mContext = context;
         inflater = LayoutInflater.from(mContext);
+        universals = new Universals(mContext);
     }
 
     @Override
@@ -90,7 +90,7 @@ public class CommentsAdapter extends BaseAdapter {
 
 //        checkSync();
         bundle = dh.getRow(new CommentsTable(), CommentsTable.ID, id);
-        userBundle = dh.getRow(new UserTable(), UserTable.FACEBOOK_ID, bundle.getString(CommentsTable.FACEBOOK_ID));
+        userBundle = dh.getRow(new UserTable(), UserTable.SOCIAL_MEDIA_ID, bundle.getString(CommentsTable.FACEBOOK_ID));
 
         tvRating = (TextView) convertView.findViewById(R.id.rating);
         TextView tvUser = (TextView) convertView.findViewById(R.id.user);
@@ -107,7 +107,7 @@ public class CommentsAdapter extends BaseAdapter {
 
         ivProfile = (ImageView) convertView.findViewById(R.id.ivProfile);
 
-        new DownloadImageTask(ivProfile).execute(getFacebookProfileURL(userBundle.getString(UserTable.FACEBOOK_ID)));
+        new DownloadImageTask(ivProfile).execute(getProfileURL(userBundle.getString(UserTable.SOCIAL_MEDIA_ID)));
 
         ratingGiven = dh.checkRatingGiven(mData.get(position));
         switch (ratingGiven){
@@ -203,8 +203,12 @@ public class CommentsAdapter extends BaseAdapter {
         return result + " ago";
     }
 
-    private String getFacebookProfileURL(String userID){
-        return "https://graph.facebook.com/" + userID + "/picture?type=large";
+    private String getProfileURL(String userID) {
+        if (Universals.PHOTO_URL != null) {
+            return String.valueOf(Universals.PHOTO_URL);
+        } else {
+            return "https://graph.facebook.com/" + userID + "/picture?type=large";
+        }
     }
 
     private void checkSync() {
@@ -231,17 +235,14 @@ public class CommentsAdapter extends BaseAdapter {
         }
 
         protected Bitmap doInBackground(String... urls) {
-            String urldisplay = urls[0];
-            System.out.println(urldisplay);
-            Bitmap mIcon11 = null;
-            try {
-                InputStream in = new java.net.URL(urldisplay).openStream();
-                mIcon11 = BitmapFactory.decodeStream(in);
-            } catch (Exception e) {
-                Log.e("Error", e.getMessage());
-                e.printStackTrace();
+            String urlDisplay = urls[0];
+            System.out.println(urlDisplay);
+            Bitmap bitmap = null;
+            if (!universals.isBitmapInMemoryCache(urlDisplay)) {
+                universals.addBitmapToMemoryCache(urlDisplay, universals.getBitmapFromURL(urlDisplay, 50, 50));
             }
-            return mIcon11;
+            bitmap = universals.getBitmapFromMemoryCache(urlDisplay);
+            return bitmap;
         }
 
         protected void onPostExecute(Bitmap result) {

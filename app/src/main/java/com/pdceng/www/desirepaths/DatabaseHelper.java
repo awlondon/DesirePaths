@@ -127,8 +127,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return bundle;
     }
 
-    synchronized boolean isUser(String facebook_id) {
-        JSONArray jsonArray = getJSONFromUrl(querySQLString(UserTable.TABLE_NAME, null, UserTable.FACEBOOK_ID + "= " + facebook_id));
+    synchronized boolean isUser(String social_media_id) {
+        JSONArray jsonArray = getJSONFromUrl(querySQLString(UserTable.TABLE_NAME, null, UserTable.SOCIAL_MEDIA_ID + "= " + social_media_id));
         return jsonArray != null;
     }
 
@@ -249,7 +249,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     private synchronized String[] getUserPIRatings() {
-        Bundle user = getRow(new UserTable(), UserTable.FACEBOOK_ID, Universals.FACEBOOK_ID);
+        Bundle user = getRow(new UserTable(), UserTable.SOCIAL_MEDIA_ID, Universals.SOCIAL_MEDIA_ID);
 
         String agree = user.getString(UserTable.PI_AGREE);
         String disagree = user.getString(UserTable.PI_DISAGREE);
@@ -261,7 +261,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     synchronized void updateUserPIRatings(String piID, boolean agree) {
-        Bundle bundle = getRow(new UserTable(), UserTable.FACEBOOK_ID, Universals.FACEBOOK_ID);
+        Bundle bundle = getRow(new UserTable(), UserTable.SOCIAL_MEDIA_ID, Universals.SOCIAL_MEDIA_ID);
 
         String updateString;
         if (agree) updateString = bundle.getString(UserTable.PI_AGREE);
@@ -279,11 +279,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         Log.d("updated PI string", updateString);
 
-        db.update(UserTable.TABLE_NAME, cv, UserTable.FACEBOOK_ID + "= ?", new String[]{Universals.FACEBOOK_ID});
+        db.update(UserTable.TABLE_NAME, cv, UserTable.SOCIAL_MEDIA_ID + "= ?", new String[]{Universals.SOCIAL_MEDIA_ID});
 
         if (db.isOpen()) db.close();
 
-        String sql = updateSQLString(UserTable.TABLE_NAME, cv, UserTable.FACEBOOK_ID + "= " + Universals.FACEBOOK_ID);
+        String sql = updateSQLString(UserTable.TABLE_NAME, cv, UserTable.SOCIAL_MEDIA_ID + "= " + Universals.SOCIAL_MEDIA_ID);
 
         postPHP(sql);
     }
@@ -328,7 +328,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     synchronized int checkRatingGiven(String commentId) {
-        Bundle bundle = getRow(new UserTable(), UserTable.FACEBOOK_ID, Universals.FACEBOOK_ID);
+        Bundle bundle = getRow(new UserTable(), UserTable.SOCIAL_MEDIA_ID, Universals.SOCIAL_MEDIA_ID);
 
         String prs = bundle.getString(UserTable.POSITIVE_RATINGS);
         String nrs = bundle.getString(UserTable.NEGATIVE_RATINGS);
@@ -355,7 +355,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     private synchronized void updateRatingsGivenByUser(boolean positive, String commentId) {
-        Bundle bundle = getRow(new UserTable(), UserTable.FACEBOOK_ID, Universals.FACEBOOK_ID);
+        Bundle bundle = getRow(new UserTable(), UserTable.SOCIAL_MEDIA_ID, Universals.SOCIAL_MEDIA_ID);
 
         String prs = bundle.getString(UserTable.POSITIVE_RATINGS);
         String nrs = bundle.getString(UserTable.NEGATIVE_RATINGS);
@@ -385,11 +385,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         cv.put(UserTable.POSITIVE_RATINGS, prs);
         cv.put(UserTable.NEGATIVE_RATINGS, nrs);
 
-        db.update(UserTable.TABLE_NAME, cv, UserTable.FACEBOOK_ID + "= ?", new String[]{Universals.FACEBOOK_ID});
+        db.update(UserTable.TABLE_NAME, cv, UserTable.SOCIAL_MEDIA_ID + "= ?", new String[]{Universals.SOCIAL_MEDIA_ID});
 
         db.close();
 
-        String sql = updateSQLString(UserTable.TABLE_NAME, cv, UserTable.FACEBOOK_ID + " = " + Universals.FACEBOOK_ID);
+        String sql = updateSQLString(UserTable.TABLE_NAME, cv, UserTable.SOCIAL_MEDIA_ID + " = " + Universals.SOCIAL_MEDIA_ID);
         System.out.println("SQL: " + sql);
 
         postPHP(sql);

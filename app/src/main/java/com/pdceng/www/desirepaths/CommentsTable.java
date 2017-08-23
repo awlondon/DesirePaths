@@ -12,7 +12,7 @@ public class CommentsTable implements Table {
     static final String PIEntry_ID = "pientry_id";
     static final String COMMENT = "comment";
     static final String RATING = "rating";
-    static final String FACEBOOK_ID = "facebook_id";
+    static final String FACEBOOK_ID = "social_media_id";
     static final String TIMESTAMP = "timestamp";
     static final String TABLE_NAME = "comments_table";
 

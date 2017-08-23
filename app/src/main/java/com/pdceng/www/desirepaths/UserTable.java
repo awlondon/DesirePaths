@@ -9,7 +9,7 @@ import java.util.List;
 
 public class UserTable implements Table {
     static final String ID = "_id";
-    static final String FACEBOOK_ID = "facebook_id";
+    static final String SOCIAL_MEDIA_ID = "social_media_id";
     static final String NAME = "name";
     static final String REGISTERED_TIMESTAMP = "registered_timestamp";
     static final String POSITIVE_RATINGS = "positive_ratings";
@@ -21,7 +21,7 @@ public class UserTable implements Table {
     @Override
     public List<String> getFields() {
         List<String> result = new ArrayList<>();
-        result.add(FACEBOOK_ID);
+        result.add(SOCIAL_MEDIA_ID);
         result.add(NAME);
         result.add(REGISTERED_TIMESTAMP);
         result.add(POSITIVE_RATINGS);
@@ -38,7 +38,7 @@ public class UserTable implements Table {
 
     @Override
     public String nullColumnHack() {
-        return FACEBOOK_ID;
+        return SOCIAL_MEDIA_ID;
     }
 
     @Override
