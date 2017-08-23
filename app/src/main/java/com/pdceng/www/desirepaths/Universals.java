@@ -3,10 +3,9 @@ package com.pdceng.www.desirepaths;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
 import android.graphics.Rect;
+import android.util.Log;
 import android.util.LruCache;
-import android.widget.ImageView;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -53,15 +52,19 @@ public class Universals {
         return instance;
     }
 
-    static Bitmap sampleBitmap(Bitmap bitmap, ImageView imageView) {
+    static Bitmap sampleBitmap(Bitmap bitmap) {
+
         int width = bitmap.getWidth();
         int height = bitmap.getHeight();
-        float scaleWidth = ((float) imageView.getMaxWidth()) / width;
-        float scaleHeight = ((float) imageView.getMaxHeight()) / height;
-        Matrix matrix = new Matrix();
-        matrix.postScale(scaleWidth, scaleHeight);
 
-        return Bitmap.createBitmap(bitmap, 0, 0, width, height);
+        Log.d("width", String.valueOf(width));
+        Log.d("height", String.valueOf(height));
+
+        float scaleFactor = (float) 700 / height;
+        int newHeight = (int) (height * scaleFactor);
+        int newWidth = (int) (width * scaleFactor);
+
+        return Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true);
     }
 
     private static int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {

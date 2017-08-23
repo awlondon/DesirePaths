@@ -163,13 +163,59 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_maps);
         universals = new Universals(this);
         dh.getAllFromSQL();
+        setClickListeners();
         bringUpMap();
     }
 
+    private void setClickListeners() {
+        findViewById(R.id.myLocation).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                getLocation(v);
+            }
+        });
+        findViewById(R.id.takePhoto).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dispatchTakePictureIntent(v);
+            }
+        });
+        findViewById(R.id.filterToggle).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                toggleFilter(v);
+            }
+        });
+        findViewById(R.id.bCards).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startCardsActivity(v);
+            }
+        });
+        findViewById(R.id.fabZoomIn).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                zoomIn(v);
+            }
+        });
+        findViewById(R.id.fabZoomOut).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                zoomOut(v);
+            }
+        });
+        findViewById(R.id.prevMap).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                moveToPreviousCameraPosition(v);
+            }
+        });
+    }
+
     private void bringUpMap() {
-        setContentView(R.layout.activity_maps);
 
         Toast.makeText(mContext, "Welcome, " + Universals.NAME.split(" ")[0], Toast.LENGTH_SHORT).show();
 
@@ -884,6 +930,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 e.printStackTrace();
             }
 
+            imageBitmap = Universals.sampleBitmap(imageBitmap);
+
+            Toast.makeText(mContext, "Width:" + imageBitmap.getWidth() + ";Height:" + imageBitmap.getHeight(), Toast.LENGTH_SHORT).show();
+
             final RelativeLayout topView = (RelativeLayout) findViewById(R.id.topView);
             final CardView cardView = new CardView(this);
 
@@ -980,7 +1030,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             final InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
             inputMethodManager.toggleSoftInputFromWindow(linearLayout.getApplicationWindowToken(), InputMethodManager.SHOW_FORCED, 0);
 
-            final SendImageFTP sendImageFTP = new SendImageFTP(Universals.sampleBitmap(imageBitmap, imageView), this);
+            final SendImageFTP sendImageFTP = new SendImageFTP(imageBitmap, this);
             sendImageFTP.execute();
 
             button.setOnClickListener(new View.OnClickListener() {

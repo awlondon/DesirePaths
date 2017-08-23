@@ -2,9 +2,9 @@
     xmlns:map="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/topView"
-    android:elevation="0dp"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:elevation="0dp">
 
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/fabZoomIn"
@@ -14,11 +14,10 @@
         android:layout_alignParentEnd="true"
         android:layout_marginBottom="20dp"
         android:layout_marginEnd="20dp"
-        android:elevation="0dp"
         android:clickable="true"
-        android:onClick="zoomIn"
-        map:rippleColor="#ffcde9"
+        android:elevation="0dp"
         map:fabSize="mini"
+        map:rippleColor="#ffcde9"
         map:srcCompat="@drawable/ic_zoom_in" />
 
     <android.support.design.widget.FloatingActionButton
@@ -29,11 +28,10 @@
         android:layout_marginBottom="20dp"
         android:layout_marginEnd="20dp"
         android:layout_toStartOf="@id/fabZoomIn"
-        android:elevation="0dp"
         android:clickable="true"
-        android:onClick="zoomOut"
-        map:rippleColor="#ffcde9"
+        android:elevation="0dp"
         map:fabSize="mini"
+        map:rippleColor="#ffcde9"
         map:srcCompat="@drawable/ic_zoom_out" />
 
     <android.support.design.widget.FloatingActionButton
@@ -45,11 +43,10 @@
         android:layout_marginEnd="20dp"
         android:layout_toStartOf="@id/fabZoomOut"
         android:clickable="true"
-        android:onClick="dispatchTakePictureIntent"
         android:elevation="0dp"
-        map:rippleColor="#27b3ff"
         map:backgroundTint="@color/darkGrey"
         map:fabSize="mini"
+        map:rippleColor="#27b3ff"
         map:srcCompat="@drawable/ic_action_takephoto" />
 
     <fragment
@@ -57,9 +54,9 @@
         android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context="com.pdceng.www.desirepaths.MapsActivity"
+        android:layout_alignParentStart="true"
         android:layout_alignParentTop="true"
-        android:layout_alignParentStart="true" />
+        tools:context="com.pdceng.www.desirepaths.MapsActivity" />
 
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/myLocation"
@@ -69,7 +66,6 @@
         android:layout_alignParentTop="true"
         android:layout_marginEnd="20dp"
         android:layout_marginTop="20dp"
-        android:onClick="getLocation"
         android:elevation="0dp"
         android:visibility="visible"
         map:backgroundTint="@color/cardview_dark_background"
@@ -85,9 +81,8 @@
         android:layout_alignTop="@+id/myLocation"
         android:layout_marginStart="14dp"
         android:clickable="true"
-        android:onClick="moveToPreviousCameraPosition"
-        android:visibility="invisible"
         android:elevation="0dp"
+        android:visibility="invisible"
         map:backgroundTint="@color/darkBlue"
         map:fabSize="mini"
         map:srcCompat="@drawable/ic_action_return" />
@@ -102,7 +97,6 @@
         android:layout_marginBottom="16dp"
         android:layout_marginStart="16dp"
         android:drawableStart="@drawable/ic_action_filter"
-        android:onClick="toggleFilter"
         android:textOff=" "
         android:textOn=" " />
 
@@ -154,7 +148,6 @@
         android:layout_marginBottom="16dp"
         android:layout_marginStart="16dp"
         android:layout_toEndOf="@+id/filterToggle"
-        android:drawableTop="@drawable/ic_action_cards"
-        android:onClick="startCardsActivity" />
+        android:drawableTop="@drawable/ic_action_cards" />
 
 </RelativeLayout>
