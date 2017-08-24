@@ -9,6 +9,7 @@ import android.support.v4.app.FragmentActivity;
 import android.util.Base64;
 import android.util.Log;
 import android.view.View;
+import android.widget.Toast;
 
 import com.facebook.AccessToken;
 import com.facebook.CallbackManager;
@@ -39,10 +40,8 @@ import java.util.Arrays;
  */
 
 public class LoginActivity extends FragmentActivity {
-    public static final int GOOGLE_LOGIN = 3;
-    public static final int FACEBOOK_LOGIN = 5;
     private static final int RC_SIGN_IN = 12;
-    String email, name, first_name, last_name, social_media_id;
+    String name, social_media_id, photo_url;
     Bundle parameters;
     LoginButton login_button;
     DatabaseHelper dh = new DatabaseHelper(this);
@@ -52,7 +51,7 @@ public class LoginActivity extends FragmentActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        setContentView(R.layout.splash);
         try {
             PackageInfo info = getPackageManager().getPackageInfo(
                     "com.pdceng.www.desirepaths",
@@ -69,53 +68,42 @@ public class LoginActivity extends FragmentActivity {
         FacebookSdk.sdkInitialize(this.getApplicationContext());
         callbackManager = CallbackManager.Factory.create();
 
-        setContentView(R.layout.splash);
+        login_button = (LoginButton) findViewById(R.id.facebook_button);
 
         if (AccessToken.getCurrentAccessToken()!=null) {
-            System.out.println("Starting graph request");
             GraphRequest graphRequest = GraphRequest.newMeRequest(AccessToken.getCurrentAccessToken(), new GraphRequest.GraphJSONObjectCallback() {
                 @Override
                 public void onCompleted(JSONObject object, GraphResponse response) {
-//                    Log.d("JSON", "" + response.getJSONObject().toString());
-
                     try {
                         name = object.getString("name");
                         social_media_id = object.getString("id");
-                        checkUser(name, social_media_id);
+                        photo_url = "https://graph.facebook.com/" + social_media_id + "/picture?type=large";
+                        checkUser();
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
                 }
             });
-
             parameters = new Bundle();
             parameters.putString("fields", "id,name,first_name,last_name,email");
             graphRequest.setParameters(parameters);
             graphRequest.executeAsync();
-
         } else {
-
-            login_button = (LoginButton) findViewById(R.id.facebook_button);
-
             login_button.setReadPermissions(Arrays.asList("public_profile", "email"));
             login_button.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
                 @Override
                 public void onSuccess(LoginResult loginResult) {
-                    login_button.setVisibility(View.GONE);
-
                     GraphRequest graphRequest = GraphRequest.newMeRequest(loginResult.getAccessToken(), new GraphRequest.GraphJSONObjectCallback() {
                         @Override
                         public void onCompleted(JSONObject object, GraphResponse response) {
-                            Log.d("JSON", "" + response.getJSONObject().toString());
-
                             try {
                                 name = object.getString("name");
                                 social_media_id = object.getString("id");
-                                checkUser(name, social_media_id);
+                                photo_url = "https://graph.facebook.com/" + social_media_id + "/picture?type=large";
+                                checkUser();
                             } catch (JSONException e) {
                                 e.printStackTrace();
                             }
-
                         }
                     });
 
@@ -161,48 +149,44 @@ public class LoginActivity extends FragmentActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data)
     {
         super.onActivityResult(requestCode, resultCode, data);
-        callbackManager.onActivityResult(requestCode, resultCode, data);
-
         if (requestCode == RC_SIGN_IN) {
             GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
             handleSignInResult(result);
+        } else {
+            callbackManager.onActivityResult(requestCode, resultCode, data);
         }
+
     }
 
     private void handleSignInResult(GoogleSignInResult result) {
         Log.d("handleSignInResult", String.valueOf(result.isSuccess()));
         if (result.isSuccess()) {
+            Toast.makeText(this, "Sign in success", Toast.LENGTH_SHORT).show();
             GoogleSignInAccount acct = result.getSignInAccount();
             name = acct.getGivenName() + " " + acct.getFamilyName();
             social_media_id = acct.getId();
-            Universals.PHOTO_URL = acct.getPhotoUrl();
-            checkUser(name, social_media_id);
+            photo_url = acct.getPhotoUrl().toString();
+            checkUser();
+        } else {
+            Toast.makeText(this, "Could not sign-in!", Toast.LENGTH_SHORT).show();
         }
     }
 
-    boolean checkUser(String name, String userId) {
-
-        if (dh.isUser(userId)) {
-            Universals.SOCIAL_MEDIA_ID = userId;
+    boolean checkUser() {
+        if (dh.isUser(social_media_id)) {
+            Universals.SOCIAL_MEDIA_ID = social_media_id;
             Universals.NAME = name;
-            System.out.println("user exists!");
-            System.out.println("social_media_id: " + userId);
-            System.out.println("name: "+ name);
         } else {
             Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-            System.out.println("user is being created!");
-            System.out.println("social_media_id: " + userId);
-            System.out.println("name: "+ name);
             Bundle bundle = new Bundle();
-            bundle.putString(UserTable.SOCIAL_MEDIA_ID, userId);
+            bundle.putString(UserTable.SOCIAL_MEDIA_ID, social_media_id);
             bundle.putString(UserTable.NAME, name);
+            bundle.putString(UserTable.PHOTO_URL, photo_url);
             bundle.putString(UserTable.REGISTERED_TIMESTAMP, timestamp.toString());
             dh.insert(bundle, new UserTable());
-            Universals.SOCIAL_MEDIA_ID = userId;
+            Universals.SOCIAL_MEDIA_ID = social_media_id;
             Universals.NAME = name;
         }
-        Bundle[] users = dh.getAllInTable(new UserTable());
-        System.out.println("no. of users: " + users.length);
 
         Intent intent = new Intent(this,MapsActivity.class);
         startActivity(intent);

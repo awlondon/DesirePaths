@@ -107,7 +107,7 @@ public class CommentsAdapter extends BaseAdapter {
 
         ivProfile = (ImageView) convertView.findViewById(R.id.ivProfile);
 
-        new DownloadImageTask(ivProfile).execute(getProfileURL(userBundle.getString(UserTable.SOCIAL_MEDIA_ID)));
+        new DownloadImageTask(ivProfile).execute(userBundle.getString(UserTable.PHOTO_URL));
 
         ratingGiven = dh.checkRatingGiven(mData.get(position));
         switch (ratingGiven){
@@ -201,14 +201,6 @@ public class CommentsAdapter extends BaseAdapter {
             else result = value + " years";
         }
         return result + " ago";
-    }
-
-    private String getProfileURL(String userID) {
-        if (Universals.PHOTO_URL != null) {
-            return String.valueOf(Universals.PHOTO_URL);
-        } else {
-            return "https://graph.facebook.com/" + userID + "/picture?type=large";
-        }
     }
 
     private void checkSync() {

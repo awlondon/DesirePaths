@@ -10,6 +10,7 @@ import java.util.List;
 public class UserTable implements Table {
     static final String ID = "_id";
     static final String SOCIAL_MEDIA_ID = "social_media_id";
+    static final String PHOTO_URL = "photo_url";
     static final String NAME = "name";
     static final String REGISTERED_TIMESTAMP = "registered_timestamp";
     static final String POSITIVE_RATINGS = "positive_ratings";
@@ -22,6 +23,7 @@ public class UserTable implements Table {
     public List<String> getFields() {
         List<String> result = new ArrayList<>();
         result.add(SOCIAL_MEDIA_ID);
+        result.add(PHOTO_URL);
         result.add(NAME);
         result.add(REGISTERED_TIMESTAMP);
         result.add(POSITIVE_RATINGS);

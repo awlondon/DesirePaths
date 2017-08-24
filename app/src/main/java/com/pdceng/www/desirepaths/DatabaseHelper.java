@@ -1,6 +1,5 @@
 package com.pdceng.www.desirepaths;
 
-import android.app.ProgressDialog;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -46,20 +45,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
         mContext = context;
-
-//        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
-//        Runnable getAllFromSQL = new Runnable() {
-//            @Override
-//            public void run() {
-//                try {
-//                    getAllFromSQL();
-//                } catch (Exception e){
-//                    e.printStackTrace();
-//                    Log.e("Exception from SQL", e.toString());
-//                }
-//            }
-//        };
-//        executorService.scheduleWithFixedDelay(getAllFromSQL, 0, 10, TimeUnit.SECONDS);
     }
 
     public static synchronized DatabaseHelper getInstance(Context context) {
@@ -80,7 +65,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL(createTableString(new PIEntryTable()));
         db.execSQL(createTableString(new CommentsTable()));
         db.execSQL(createTableString(new UserTable()));
-
     }
 
     @Override
@@ -139,7 +123,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             db.delete(table.tableName(), null, null);
         }
         AsyncTask<Void, JSONArray[], JSONArray[]> task = new AsyncTask<Void, JSONArray[], JSONArray[]>() {
-            ProgressDialog progressDialog;
 
             @Override
             protected void onPreExecute() {
@@ -155,7 +138,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     String sql = querySQLString(table.tableName(), null, null);
                     jsonArrays.add(getJSONFromUrl(sql));
                 }
-                System.out.println(jsonArrays.toString());
                 return jsonArrays.toArray(new JSONArray[jsonArrays.size()]);
             }
 
@@ -207,7 +189,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
         c.close();
         db.close();
-        System.out.println("PI Entries: " + bundles.toString());
         return bundles.toArray(new Bundle[bundles.size()]);
     }
 
@@ -289,7 +270,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     synchronized long adjustRating(boolean positive, String... commentId) {
-        System.out.println("Comment id: " + commentId);
         String rating = getRow(new CommentsTable(), CommentsTable.ID, commentId[0]).getString(CommentsTable.RATING);
         String newRating = rating;
 
@@ -361,23 +341,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         String nrs = bundle.getString(UserTable.NEGATIVE_RATINGS);
         String commentIdAdj = commentId + ";";
 
-        System.out.println("prs: " + prs);
-        System.out.println("nrs: " + nrs);
-
         if (prs == null || Objects.equals(prs, "null")) prs = "";
         if (nrs == null || Objects.equals(nrs, "null")) nrs = "";
-
-        System.out.println("prs: " + prs);
-        System.out.println("nrs: " + nrs);
 
         if (prs.contains(commentIdAdj)) prs = prs.replace(commentIdAdj, "");
         else if (positive) prs = prs.concat(commentIdAdj);
 
         if (nrs.contains(commentIdAdj)) nrs = nrs.replace(commentIdAdj, "");
         else if (!positive) nrs = nrs.concat(commentIdAdj);
-
-        System.out.println("prs: " + prs);
-        System.out.println("nrs: " + nrs);
 
         //Update db
         SQLiteDatabase db = getWritableDatabase();
@@ -386,12 +357,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         cv.put(UserTable.NEGATIVE_RATINGS, nrs);
 
         db.update(UserTable.TABLE_NAME, cv, UserTable.SOCIAL_MEDIA_ID + "= ?", new String[]{Universals.SOCIAL_MEDIA_ID});
-
         db.close();
 
         String sql = updateSQLString(UserTable.TABLE_NAME, cv, UserTable.SOCIAL_MEDIA_ID + " = " + Universals.SOCIAL_MEDIA_ID);
-        System.out.println("SQL: " + sql);
-
         postPHP(sql);
     }
 
@@ -406,7 +374,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 i++;
             } while (c.moveToNext());
         }
-        System.out.println("found " + i + " comments!");
         c.close();
 
         HashMap<String, Integer> idsAndRatings = new HashMap<>();
@@ -549,6 +516,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return sql.toString();
     }
 
+
     private synchronized void postPHP(final String sql) {
         PostPHP postPHP = new PostPHP();
         postPHP.execute(sql);
@@ -560,7 +528,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     private class PostPHP extends AsyncTask<String, Void, String> {
-        ProgressDialog progressDialog;
         private String finalResponse;
 
         @Override
@@ -568,13 +535,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             super.onPreExecute();
             Toast.makeText(mContext, "Updating...", Toast.LENGTH_SHORT).show();
         }
-
         @Override
         protected void onPostExecute(String httpResponseMsg) {
             super.onPostExecute(httpResponseMsg);
             Log.d("POST result", finalResponse);
         }
-
         @Override
         protected String doInBackground(String... params) {
 
@@ -590,20 +555,19 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         }
     }
-
     // JSON parse class started from here.
     private class GetJSONFromUrl {
         public Context context;
         String JSONResult;
-        String httpUrl = "http://www.desirepaths.xyz/Get.php";
+        String httpUrl = "http://wwww.desirepaths.xyz/Get.php";
 
         GetJSONFromUrl() {
         }
 
-
         JSONArray getJSONFromUrl(final String sql) {
-
             JSONArray result = null;
+
+
             ExecutorService executorService = Executors.newSingleThreadExecutor();
             Future<JSONArray> urlGetResult = executorService.submit(new Callable<JSONArray>() {
                 @Override
@@ -615,7 +579,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
                     JSONArray jsonArray = null;
                     if (JSONResult != null) {
-
                         try {
                             jsonArray = new JSONArray(JSONResult);
                         } catch (JSONException e) {
@@ -624,6 +587,34 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         }
                     }
                     return jsonArray;
+
+                   /* OkHttpClient client = new OkHttpClient();
+
+                    RequestBody body = RequestBody.create(MediaType.parse(sql),sql);
+
+                    Request request = new Request.Builder()
+                            .url(httpUrl)
+                            .post(body)
+                            .build();
+
+                    Response response;
+                    JSONArray jsonArray = null;
+                    try {
+                        response = client.newCall(request).execute();
+                        JSONResult = response.body().string();
+                        if (JSONResult != null) {
+                            try {
+                                jsonArray = new JSONArray(JSONResult);
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                                jsonArray = null;
+                            }
+                        }
+
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    return jsonArray;*/
                 }
             });
             try {

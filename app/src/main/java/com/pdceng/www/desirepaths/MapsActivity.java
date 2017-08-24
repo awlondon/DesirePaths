@@ -337,7 +337,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     tb.setChecked(false);
                     toggleFilter(tb);
                 }
-
                 //Creates CardView
                 final RelativeLayout topView = (RelativeLayout) findViewById(R.id.topView);
                 final CardView cardView = new CardView(mContext);
@@ -834,7 +833,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                             }
                         });
-//                ll.setVisibility(View.INVISIBLE);
             }
         }
     }
@@ -931,8 +929,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
 
             imageBitmap = Universals.sampleBitmap(imageBitmap);
-
-            Toast.makeText(mContext, "Width:" + imageBitmap.getWidth() + ";Height:" + imageBitmap.getHeight(), Toast.LENGTH_SHORT).show();
 
             final RelativeLayout topView = (RelativeLayout) findViewById(R.id.topView);
             final CardView cardView = new CardView(this);

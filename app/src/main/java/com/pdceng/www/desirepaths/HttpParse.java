@@ -18,15 +18,15 @@ import java.util.Map;
 
 public class HttpParse {
 
-    String FinalHttpData = "";
-    String Result;
-    BufferedWriter bufferedWriter;
-    OutputStream outputStream;
-    BufferedReader bufferedReader;
-    StringBuilder stringBuilder = new StringBuilder();
-    URL url;
+    private String FinalHttpData = "";
+    private String Result;
+    private BufferedWriter bufferedWriter;
+    private OutputStream outputStream;
+    private BufferedReader bufferedReader;
+    private StringBuilder stringBuilder = new StringBuilder();
+    private URL url;
 
-    public String postRequest(HashMap<String, String> Data, String HttpUrlHolder) {
+    String postRequest(HashMap<String, String> Data, String HttpUrlHolder) {
 
         try {
             url = new URL(HttpUrlHolder);
@@ -45,9 +45,7 @@ public class HttpParse {
 
             outputStream = httpURLConnection.getOutputStream();
 
-            bufferedWriter = new BufferedWriter(
-
-                    new OutputStreamWriter(outputStream, "UTF-8"));
+            bufferedWriter = new BufferedWriter(new OutputStreamWriter(outputStream, "UTF-8"));
 
             bufferedWriter.write(FinalDataParse(Data));
 
@@ -75,7 +73,7 @@ public class HttpParse {
         return FinalHttpData;
     }
 
-    public String FinalDataParse(HashMap<String, String> hashMap2) throws UnsupportedEncodingException {
+    private String FinalDataParse(HashMap<String, String> hashMap2) throws UnsupportedEncodingException {
 
         for (Map.Entry<String, String> map_entry : hashMap2.entrySet()) {
 
