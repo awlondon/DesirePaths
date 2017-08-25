@@ -15,16 +15,13 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 import static android.database.sqlite.SQLiteQueryBuilder.appendColumns;
 
@@ -111,66 +108,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return bundle;
     }
 
-    synchronized boolean isUser(String social_media_id) {
-        JSONArray jsonArray = getJSONFromUrl(querySQLString(UserTable.TABLE_NAME, null, UserTable.SOCIAL_MEDIA_ID + "= " + social_media_id));
-        return jsonArray != null;
-    }
-
-    synchronized boolean getAllFromSQL() {
+    synchronized void getAllFromSQL(AfterGetAll afterGetAll) {
         final Table[] tables = new Table[]{new PIEntryTable(), new CommentsTable(), new UserTable()};
-        for (final Table table : tables) {
-            SQLiteDatabase db = getWritableDatabase();
-            db.delete(table.tableName(), null, null);
+
+        Toast.makeText(mContext, "Synchronizing...", Toast.LENGTH_SHORT).show();
+
+        for (Table table : tables) {
+            String sql = querySQLString(table.tableName(), null, null);
+            getJSONFromUrl(sql, afterGetAll);
         }
-        AsyncTask<Void, JSONArray[], JSONArray[]> task = new AsyncTask<Void, JSONArray[], JSONArray[]>() {
-
-            @Override
-            protected void onPreExecute() {
-                super.onPreExecute();
-                Toast.makeText(mContext, "Synchronizing...", Toast.LENGTH_SHORT).show();
-                Universals.SYNCHRONIZING = true;
-            }
-
-            @Override
-            protected JSONArray[] doInBackground(Void... params) {
-                ArrayList<JSONArray> jsonArrays = new ArrayList<>();
-                for (Table table : tables) {
-                    String sql = querySQLString(table.tableName(), null, null);
-                    jsonArrays.add(getJSONFromUrl(sql));
-                }
-                return jsonArrays.toArray(new JSONArray[jsonArrays.size()]);
-            }
-
-            @Override
-            protected void onPostExecute(JSONArray[] jsonArrays) {
-                super.onPostExecute(jsonArrays);
-                SQLiteDatabase db = getWritableDatabase();
-                int k = 0;
-                for (Table table : tables) {
-                    JSONArray jsonArray = jsonArrays[k];
-                    if (jsonArray != null) {
-                        for (int i = 0; i < jsonArray.length(); i++) {
-                            try {
-                                JSONObject jsonObject = jsonArray.getJSONObject(i);
-                                ContentValues cv = new ContentValues();
-                                cv.put(table.id(), jsonObject.getInt(table.id()));
-                                for (String field : table.getFields()) {
-                                    cv.put(field, jsonObject.getString(field));
-                                }
-                                db.insert(table.tableName(), table.nullColumnHack(), cv);
-                            } catch (JSONException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }
-                    k++;
-                }
-                ((MapsActivity) mContext).setUpCluster();
-                Universals.SYNCHRONIZING = false;
-            }
-        };
-        task.execute();
-        return true;
     }
 
     synchronized Bundle[] getAllInTable(Table table) {
@@ -415,6 +361,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return count;
     }
 
+    boolean isUser(String... social_media_id) {
+        SQLiteDatabase db = getReadableDatabase();
+        Cursor c = db.query(UserTable.TABLE_NAME, null, UserTable.SOCIAL_MEDIA_ID + "=?", social_media_id, null, null, null);
+        boolean result = c != null;
+        c.close();
+        db.close();
+        return result;
+    }
+
     private synchronized String createTableString(Table table) {
         String string = "CREATE TABLE ";
         string += table.tableName();
@@ -522,9 +477,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         postPHP.execute(sql);
     }
 
-    private synchronized JSONArray getJSONFromUrl(final String sql) {
-        GetJSONFromUrl getJSONFromUrl = new GetJSONFromUrl();
-        return getJSONFromUrl.getJSONFromUrl(sql);
+    private synchronized void getJSONFromUrl(final String sql, AfterGetAll afterGetAll) {
+        GetJSONFromUrl getJSONFromUrl = new GetJSONFromUrl(afterGetAll);
+        getJSONFromUrl.execute(sql);
     }
 
     private class PostPHP extends AsyncTask<String, Void, String> {
@@ -555,16 +510,83 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         }
     }
-    // JSON parse class started from here.
-    private class GetJSONFromUrl {
+
+    //     JSON parse class started from here.
+    private class GetJSONFromUrl extends AsyncTask<String, Void, String> {
         public Context context;
         String JSONResult;
-        String httpUrl = "http://wwww.desirepaths.xyz/Get.php";
+        String httpUrl = "http://www.desirepaths.xyz/Get.php";
+        AfterGetAll afterGetAll = null;
 
         GetJSONFromUrl() {
         }
 
-        JSONArray getJSONFromUrl(final String sql) {
+        GetJSONFromUrl(AfterGetAll afterGetAll) {
+            this.afterGetAll = afterGetAll;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+
+        @Override
+        protected String doInBackground(String... params) {
+            try {
+                InetAddress i = InetAddress.getByName(httpUrl);
+            } catch (UnknownHostException e) {
+                e.printStackTrace();
+                System.out.println("Ran with error!");
+            }
+            HttpParse httpParse = new HttpParse();
+            HashMap<String, String> hashMap = new HashMap<>();
+            hashMap.put("sql", params[0]);
+            JSONResult = httpParse.postRequest(hashMap, httpUrl);
+
+            return JSONResult;
+        }
+
+        @Override
+        protected void onPostExecute(String JSONResult) {
+            super.onPostExecute(JSONResult);
+            Table table;
+            if (JSONResult.contains(PIEntryTable.SNIPPET)) {
+                table = new PIEntryTable();
+            } else if (JSONResult.contains(UserTable.PHOTO_URL)) {
+                table = new UserTable();
+            } else {
+                table = new CommentsTable();
+            }
+
+            JSONArray jsonArray;
+            try {
+                jsonArray = new JSONArray(JSONResult);
+            } catch (JSONException e) {
+                e.printStackTrace();
+                jsonArray = null;
+            }
+            SQLiteDatabase db = getWritableDatabase();
+            db.delete(table.tableName(), null, null);
+
+            if (jsonArray != null) {
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    try {
+                        JSONObject jsonObject = jsonArray.getJSONObject(i);
+                        ContentValues cv = new ContentValues();
+                        cv.put(table.id(), jsonObject.getInt(table.id()));
+                        for (String field : table.getFields()) {
+                            cv.put(field, jsonObject.getString(field));
+                        }
+                        db.insert(table.tableName(), table.nullColumnHack(), cv);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            if (afterGetAll != null) afterGetAll.afterGetAll();
+        }
+
+   /* JSONArray getJSONFromUrl(final String sql) {
             JSONArray result = null;
 
 
@@ -588,7 +610,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     }
                     return jsonArray;
 
-                   /* OkHttpClient client = new OkHttpClient();
+                   *//* OkHttpClient client = new OkHttpClient();
 
                     RequestBody body = RequestBody.create(MediaType.parse(sql),sql);
 
@@ -614,7 +636,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                    return jsonArray;*/
+                    return jsonArray;*//*
                 }
             });
             try {
@@ -624,6 +646,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             }
             executorService.shutdown();
             return result;
-        }
+        }*/
     }
 }

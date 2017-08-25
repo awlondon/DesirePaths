@@ -33,6 +33,12 @@ public class HttpParse {
 
             HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
 
+//          Begin:  I added
+            httpURLConnection.setInstanceFollowRedirects(true);
+            httpURLConnection.setUseCaches(true);
+            httpURLConnection.setDefaultUseCaches(true);
+//            End: I Added
+
             httpURLConnection.setReadTimeout(14000);
 
             httpURLConnection.setConnectTimeout(14000);

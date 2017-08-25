@@ -102,7 +102,7 @@ import static android.graphics.Color.GRAY;
 import static android.graphics.Color.RED;
 import static android.widget.LinearLayout.VERTICAL;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnInfoWindowClickListener /*, GoogleMap.OnPoiClickListener */ {
+public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnInfoWindowClickListener, AfterGetAll {
 
     static final int delay_getAll = 30;
     private static final String TAG = "tag";
@@ -165,7 +165,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
         universals = new Universals(this);
-        dh.getAllFromSQL();
         setClickListeners();
         bringUpMap();
     }
@@ -329,6 +328,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         mClusterManager = new ClusterManager<>(this, mMap);
 
+        setUpCluster();
+
         mClusterManager.setOnClusterItemClickListener(new ClusterManager.OnClusterItemClickListener<MyItem>() {
             @Override
             public boolean onClusterItemClick(final MyItem myItem) {
@@ -425,7 +426,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 fab.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        dh.getAllFromSQL();
+                        dh.getAllFromSQL((AfterGetAll) mContext);
                         cardView.animate()
                                 .translationY(topView.getHeight())
                                 .setInterpolator(new AccelerateDecelerateInterpolator())
@@ -520,7 +521,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                 bundle.putString(CommentsTable.RATING, "0");
                                 bundle.putString(CommentsTable.COMMENT, etComment.getText().toString());
                                 bundle.putString(CommentsTable.TIMESTAMP, String.valueOf(System.currentTimeMillis()));
-                                bundle.putString(CommentsTable.FACEBOOK_ID, Universals.SOCIAL_MEDIA_ID);
+                                bundle.putString(CommentsTable.SOCIAL_MEDIA_ID, Universals.SOCIAL_MEDIA_ID);
                                 dh.insert(bundle, new CommentsTable());
                                 cardView.removeView(linearLayout1);
                                 setCommentsAdapter(String.valueOf(myItem.getId()));
@@ -1105,6 +1106,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 }
             });
         }
+    }
+
+    @Override
+    public void afterGetAll() {
+        setUpCluster();
     }
 
     private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {

@@ -12,7 +12,7 @@ public class CommentsTable implements Table {
     static final String PIEntry_ID = "pientry_id";
     static final String COMMENT = "comment";
     static final String RATING = "rating";
-    static final String FACEBOOK_ID = "social_media_id";
+    static final String SOCIAL_MEDIA_ID = "social_media_id";
     static final String TIMESTAMP = "timestamp";
     static final String TABLE_NAME = "comments_table";
 
@@ -22,7 +22,7 @@ public class CommentsTable implements Table {
         result.add(PIEntry_ID);
         result.add(COMMENT);
         result.add(RATING);
-        result.add(FACEBOOK_ID);
+        result.add(SOCIAL_MEDIA_ID);
         result.add(TIMESTAMP);
         return result;
     }

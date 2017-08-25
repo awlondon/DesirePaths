@@ -90,7 +90,7 @@ public class CommentsAdapter extends BaseAdapter {
 
 //        checkSync();
         bundle = dh.getRow(new CommentsTable(), CommentsTable.ID, id);
-        userBundle = dh.getRow(new UserTable(), UserTable.SOCIAL_MEDIA_ID, bundle.getString(CommentsTable.FACEBOOK_ID));
+        userBundle = dh.getRow(new UserTable(), UserTable.SOCIAL_MEDIA_ID, bundle.getString(CommentsTable.SOCIAL_MEDIA_ID));
 
         tvRating = (TextView) convertView.findViewById(R.id.rating);
         TextView tvUser = (TextView) convertView.findViewById(R.id.user);

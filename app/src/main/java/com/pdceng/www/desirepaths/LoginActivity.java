@@ -51,6 +51,7 @@ public class LoginActivity extends FragmentActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        dh.getAllFromSQL(null);
         setContentView(R.layout.splash);
         try {
             PackageInfo info = getPackageManager().getPackageInfo(
