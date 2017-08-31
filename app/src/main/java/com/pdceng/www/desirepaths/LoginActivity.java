@@ -39,7 +39,7 @@ import java.util.Arrays;
  * Created by alondon on 8/8/2017.
  */
 
-public class LoginActivity extends FragmentActivity {
+public class LoginActivity extends FragmentActivity implements AfterGetAll {
     private static final int RC_SIGN_IN = 12;
     String name, social_media_id, photo_url;
     Bundle parameters;
@@ -51,7 +51,7 @@ public class LoginActivity extends FragmentActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        dh.getAllFromSQL(null);
+        dh.getAllFromSQL(this);
         setContentView(R.layout.splash);
         try {
             PackageInfo info = getPackageManager().getPackageInfo(
@@ -199,4 +199,8 @@ public class LoginActivity extends FragmentActivity {
         startActivityForResult(intent, RC_SIGN_IN);
     }
 
+    @Override
+    public void afterGetAll() {
+        Toast.makeText(this, "Data loaded successfully", Toast.LENGTH_SHORT).show();
+    }
 }

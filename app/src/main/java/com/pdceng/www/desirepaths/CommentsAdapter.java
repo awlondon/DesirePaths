@@ -238,7 +238,11 @@ public class CommentsAdapter extends BaseAdapter {
         }
 
         protected void onPostExecute(Bitmap result) {
+            bmImage.setAlpha(0f);
             bmImage.setImageBitmap(result);
+            bmImage.animate()
+                    .setDuration(500)
+                    .alphaBy(1f);
         }
     }
 }

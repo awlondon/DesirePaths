@@ -7,7 +7,6 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -19,7 +18,9 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
@@ -61,12 +62,15 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.Dash;
 import com.google.android.gms.maps.model.Dot;
 import com.google.android.gms.maps.model.Gap;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PatternItem;
 import com.google.android.gms.maps.model.TileOverlay;
 import com.google.android.gms.maps.model.TileOverlayOptions;
@@ -86,6 +90,7 @@ import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -98,12 +103,10 @@ import java.util.Objects;
 import java.util.Scanner;
 import java.util.concurrent.ScheduledExecutorService;
 
-import static android.graphics.Color.GRAY;
-import static android.graphics.Color.RED;
+import static android.graphics.Color.LTGRAY;
 import static android.widget.LinearLayout.VERTICAL;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnInfoWindowClickListener, AfterGetAll {
-
     static final int delay_getAll = 30;
     private static final String TAG = "tag";
     private static final int REQUEST_IMAGE_CAPTURE = 1;
@@ -127,6 +130,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     // Create a stroke pattern of a dot followed by a gap, a dash, and another gap.
     private static final List<PatternItem> PATTERN_POLYGON_BETA =
             Arrays.asList(DOT, GAP, DASH, GAP);
+    private static final int PICK_IMAGE = 4234;
+    private static final int PERMISSIONS_MULTIPLE_REQUEST = 123;
     private static int DEFAULT_ZOOM = 10;
     private final LatLng startingPoint = new LatLng(61.2185, -149.8996);
     List<LatLng> lls = new ArrayList<>();
@@ -136,6 +141,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     DatabaseHelper dh = new DatabaseHelper(this);
     ScheduledExecutorService executorService;
     Runnable getAllFromSQL;
+    float translationY = 0;
+    boolean noPicture = false;
     private GoogleMap mMap;
     private ClusterManager<MyItem> mClusterManager;
     private HeatmapTileProvider mProvider;
@@ -159,6 +166,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private CallbackManager callbackManager;
     private Uri imageUri;
     private Universals universals;
+    private int animDur = 200;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -167,6 +175,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         universals = new Universals(this);
         setClickListeners();
         bringUpMap();
+        checkPermission();
     }
 
     private void setClickListeners() {
@@ -174,6 +183,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onClick(View v) {
                 getLocation(v);
+            }
+        });
+        findViewById(R.id.addInputOnly).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                addPublicInputEntry(null, true);
+            }
+        });
+        findViewById(R.id.fromLibrary).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                pickImageFromLibrary(v);
             }
         });
         findViewById(R.id.takePhoto).setOnClickListener(new View.OnClickListener() {
@@ -185,7 +206,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         findViewById(R.id.filterToggle).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                toggleFilter(v);
+                toggleOptions(v);
+            }
+        });
+        findViewById(R.id.addInputToggle).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                toggleOptions(v);
             }
         });
         findViewById(R.id.bCards).setOnClickListener(new View.OnClickListener() {
@@ -194,13 +221,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 startCardsActivity(v);
             }
         });
-        findViewById(R.id.fabZoomIn).setOnClickListener(new View.OnClickListener() {
+        findViewById(R.id.zoomIn).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 zoomIn(v);
             }
         });
-        findViewById(R.id.fabZoomOut).setOnClickListener(new View.OnClickListener() {
+        findViewById(R.id.zoomOut).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 zoomOut(v);
@@ -215,8 +242,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private void bringUpMap() {
+        Snackbar.make(this.findViewById(android.R.id.content),
+                "Welcome, " + Universals.NAME.split(" ")[0] + "!",
+                Snackbar.LENGTH_INDEFINITE).setAction("THANKS",
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        //Enter code logic here
+                    }
+                }).show();
 
-        Toast.makeText(mContext, "Welcome, " + Universals.NAME.split(" ")[0], Toast.LENGTH_SHORT).show();
+//        Toast.makeText(mContext, "Welcome, " + Universals.NAME.split(" ")[0], Toast.LENGTH_SHORT).show();
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -239,7 +275,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 //        new ConnectMySQL(null,null,this,1).execute("id2380250_alexlondon","Anchorage_0616");
 //        System.out.println(dh.getRow(new UserTable(),UserTable.SOCIAL_MEDIA_ID, Universals.SOCIAL_MEDIA_ID).toString());
     }
-
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
@@ -318,11 +353,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
             @Override
             public void onMapClick(LatLng latLng) {
-                ToggleButton tb = (ToggleButton) findViewById(R.id.filterToggle);
-                if (tb.isChecked()) {
-                    tb.setChecked(false);
-                    toggleFilter(tb);
-                }
+                unCheckToggleButtons();
             }
         });
 
@@ -333,241 +364,24 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mClusterManager.setOnClusterItemClickListener(new ClusterManager.OnClusterItemClickListener<MyItem>() {
             @Override
             public boolean onClusterItemClick(final MyItem myItem) {
-                ToggleButton tb = (ToggleButton) findViewById(R.id.filterToggle);
-                if (tb.isChecked()) {
-                    tb.setChecked(false);
-                    toggleFilter(tb);
-                }
-                //Creates CardView
-                final RelativeLayout topView = (RelativeLayout) findViewById(R.id.topView);
-                final CardView cardView = new CardView(mContext);
 
-                final int margin = (int) getResources().getDimension(R.dimen.card_margin);
-                CardView.LayoutParams params = new CardView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-                params.setMargins(0, 0, 0, 0);
-                cardView.setLayoutParams(params);
-
-                cardView.setCardBackgroundColor(COLOR_WHITE_ARGB);
-
-                cardView.bringToFront();
-                cardView.setRadius(0);
-                cardView.setClickable(true);
-                cardView.setElevation(20f);
-
-                topView.addView(cardView);
-
-                //"Creates" grey background
-                RelativeLayout relativeLayout = new RelativeLayout(mContext);
-                relativeLayout.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-
-                LinearLayout.LayoutParams llParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-                final LinearLayout linearLayout = new LinearLayout(mContext);
-                linearLayout.setOrientation(VERTICAL);
-                linearLayout.setLayoutParams(llParams);
-                linearLayout.setBackgroundColor(getColor(R.color.lightGrey));
-
-                LinearLayout entryLayout = new LinearLayout(mContext);
-                entryLayout.setLayoutParams(llParams);
-                entryLayout.setOrientation(VERTICAL);
-                entryLayout.setBackgroundColor(getColor(R.color.white));
-
-                //Creates main ImageView
-                mImageView = new ImageView(mContext);
-                ViewGroup.LayoutParams ivParams = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 700);
-                mImageView.setLayoutParams(ivParams);
-                mImageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
-
-                //Creates circular progress bar
-                RelativeLayout.LayoutParams pbParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-                pbParams.addRule(RelativeLayout.CENTER_IN_PARENT);
-                ProgressBar progressBar = new ProgressBar(mContext);
-                progressBar.setLayoutParams(pbParams);
-
-                //Creates TextViews
-                LinearLayout.LayoutParams snippetParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-                snippetParams.setMargins(margin * 2, 0, 0, 0);
-
-                LinearLayout.LayoutParams titleParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-                titleParams.setMargins(margin * 2, 0, 0, 0);
-
-                TextView tvUserDate = new TextView(mContext);
-                TextView tvTitle = new TextView(mContext);
-                TextView tvSnippet = new TextView(mContext);
-
-                LinearLayout.LayoutParams userdateParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-                userdateParams.gravity = Gravity.END;
-                userdateParams.setMargins(0, margin, margin, 0);
-
-                tvUserDate.setLayoutParams(userdateParams);
-                tvTitle.setLayoutParams(titleParams);
-                tvSnippet.setLayoutParams(snippetParams);
-
-                final String addedBy = "Added by: ";
-                SpannableString italicUserDate = new SpannableString(addedBy + myItem.getUser() + " on " + formatDateForTimestamp(myItem.getTimestamp()));
-                italicUserDate.setSpan(new StyleSpan(Typeface.BOLD_ITALIC), addedBy.length(), addedBy.length() + myItem.getUser().length(), 0);
-
-                SpannableString boldTitle = new SpannableString(myItem.getTitle());
-                boldTitle.setSpan(new StyleSpan(Typeface.BOLD), 0, myItem.getTitle().length(), 0);
-
-                tvUserDate.setText(italicUserDate);
-                tvTitle.setText(boldTitle);
-                tvSnippet.setText(myItem.getSnippet());
-
-                //FloatingActionButton
-                FloatingActionButton fab = new FloatingActionButton(mContext);
-                fab.setImageDrawable(getResources().getDrawable(R.drawable.ic_dialog_close_dark));
-                fab.setBackgroundTintList(ColorStateList.valueOf(GRAY));
-                fab.setSize(FloatingActionButton.SIZE_MINI);
-                fab.setRippleColor(RED);
-                fab.setCompatElevation(5f);
-                RelativeLayout.LayoutParams fabParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
-                fabParams.setMargins(10, 10, 0, 0);
-                fab.setLayoutParams(fabParams);
-                fab.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        dh.getAllFromSQL((AfterGetAll) mContext);
-                        cardView.animate()
-                                .translationY(topView.getHeight())
-                                .setInterpolator(new AccelerateDecelerateInterpolator())
-                                .setDuration(300)
-                                .setListener(new Animator.AnimatorListener() {
-                                    @Override
-                                    public void onAnimationStart(Animator animation) {
-
-                                    }
-
-                                    @Override
-                                    public void onAnimationEnd(Animator animation) {
-                                        cardView.setVisibility(View.GONE);
-
-                                    }
-
-                                    @Override
-                                    public void onAnimationCancel(Animator animation) {
-
-                                    }
-
-                                    @Override
-                                    public void onAnimationRepeat(Animator animation) {
-
-                                    }
-                                });
-                    }
-                });
-
-                relativeLayout.addView(mImageView);
-                relativeLayout.addView(fab);
-                relativeLayout.addView(progressBar);
-
-                linearLayout.addView(relativeLayout);
-
-                linearLayout.addView(entryLayout);
-
-                entryLayout.addView(tvUserDate);
-                entryLayout.addView(tvTitle);
-                entryLayout.addView(tvSnippet);
-
-                //comment button
-                LinearLayout.LayoutParams commentButtonParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-                commentButtonParams.gravity = Gravity.END;
-                ImageButton ibComment = new ImageButton(mContext);
-                ibComment.setImageDrawable(getResources().getDrawable(R.drawable.ic_action_comment));
-                ibComment.setBackground(null);
-                ibComment.setLayoutParams(commentButtonParams);
-                ibComment.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        final LinearLayout linearLayout1 = new LinearLayout(mContext);
-                        linearLayout1.setOrientation(VERTICAL);
-                        cardView.addView(linearLayout1);
-                        linearLayout1.setLayoutParams(new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
-                        linearLayout1.setBackgroundColor(getColor(R.color.lightGreyTransparent));
-
-                        LinearLayout.LayoutParams etParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 300);
-                        etParams.setMargins(margin, margin, margin, margin);
-                        etParams.gravity = Gravity.TOP;
-
-                        final EditText etComment = new EditText(mContext);
-                        etComment.setHint("Add a comment...");
-                        etComment.setBackgroundColor(getColor(R.color.white));
-                        etComment.setPadding(margin, 0, margin, 0);
-                        etComment.setLayoutParams(etParams);
-                        etComment.setInputType(InputType.TYPE_TEXT_FLAG_MULTI_LINE);
-
-                        Button postButton = new Button(mContext);
-                        postButton.setText("POST");
-                        postButton.getBackground().setColorFilter(getColor(R.color.darkBlue), PorterDuff.Mode.MULTIPLY);
-                        Button cancelButton = new Button(mContext);
-                        cancelButton.setText("CANCEL");
-
-                        linearLayout1.addView(etComment);
-                        linearLayout1.addView(postButton);
-                        linearLayout1.addView(cancelButton);
-
-                        etComment.requestFocus();
-                        final InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-                        inputMethodManager.toggleSoftInputFromWindow(linearLayout1.getApplicationWindowToken(), InputMethodManager.SHOW_FORCED, 0);
-
-                        postButton.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                if (etComment.getText().toString().isEmpty()) {
-                                    Toast.makeText(MapsActivity.this, "Please enter a comment", Toast.LENGTH_SHORT).show();
-                                    return;
-                                }
-                                Bundle bundle = new Bundle();
-                                bundle.putString(CommentsTable.PIEntry_ID, String.valueOf(myItem.getId()));
-                                bundle.putString(CommentsTable.RATING, "0");
-                                bundle.putString(CommentsTable.COMMENT, etComment.getText().toString());
-                                bundle.putString(CommentsTable.TIMESTAMP, String.valueOf(System.currentTimeMillis()));
-                                bundle.putString(CommentsTable.SOCIAL_MEDIA_ID, Universals.SOCIAL_MEDIA_ID);
-                                dh.insert(bundle, new CommentsTable());
-                                cardView.removeView(linearLayout1);
-                                setCommentsAdapter(String.valueOf(myItem.getId()));
-                                inputMethodManager.toggleSoftInputFromWindow(linearLayout1.getApplicationWindowToken(), InputMethodManager.SHOW_FORCED, 0);
-                            }
-                        });
-
-                        cancelButton.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                cardView.removeView(linearLayout1);
-                                inputMethodManager.toggleSoftInputFromWindow(linearLayout1.getApplicationWindowToken(), InputMethodManager.SHOW_FORCED, 0);
-                            }
-                        });
-                    }
-                });
-                entryLayout.addView(ibComment);
-
-                //ListView
-                listView = new ListView(mContext);
-
-                ListView.LayoutParams lvParams = new AbsListView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-                listView.setLayoutParams(lvParams);
-
-                setCommentsAdapter(String.valueOf(myItem.getId()));
-
-                linearLayout.addView(listView);
-
-                cardView.addView(linearLayout);
-
-                //load image
-                new DownloadImageTask(mImageView, progressBar).execute(myItem.getBitmapUrlString());
-
-                //open animation
-                float cvDefY = cardView.getY();
-                cardView.setY(topView.getHeight());
-                cardView.animate()
-                        .translationY(0)
-                        .setInterpolator(new AccelerateDecelerateInterpolator())
-                        .setDuration(300);
-
-                return true;
+                return openPublicInputView(myItem);
             }
 
         });
 
+    }
+
+    void unCheckToggleButtons() {
+        ToggleButton tb = (ToggleButton) findViewById(R.id.filterToggle);
+        ToggleButton tb2 = (ToggleButton) findViewById(R.id.addInputToggle);
+        ToggleButton[] tbs = new ToggleButton[]{tb, tb2};
+        for (ToggleButton toggleButton : tbs) {
+            if (toggleButton.isChecked()) {
+                toggleButton.setChecked(false);
+                toggleOptions(toggleButton);
+            }
+        }
     }
 
     @Override
@@ -575,17 +389,314 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Toast.makeText(MapsActivity.this, marker.getPosition().toString(), Toast.LENGTH_SHORT).show();
     }
 
+    boolean openPublicInputView(final MyItem myItem) {
+        translationY = 0;
+
+        unCheckToggleButtons();
+
+        //Creates CardView
+        final RelativeLayout topView = (RelativeLayout) findViewById(R.id.topView);
+        final CardView cardView = new CardView(mContext);
+
+        final int margin = (int) getResources().getDimension(R.dimen.card_margin);
+        CardView.LayoutParams params = new CardView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+        cardView.setPadding(0, 200, 0, 200);
+        cardView.setLayoutParams(params);
+
+        cardView.setCardBackgroundColor(COLOR_WHITE_ARGB);
+
+        cardView.bringToFront();
+        cardView.setRadius(0);
+        cardView.setClickable(true);
+        cardView.setElevation(20f);
+
+        topView.addView(cardView);
+
+        //"Creates" grey background
+        RelativeLayout relativeLayout = new RelativeLayout(mContext);
+        relativeLayout.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        LinearLayout.LayoutParams llParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        final LinearLayout linearLayout = new LinearLayout(mContext);
+        linearLayout.setOrientation(VERTICAL);
+        linearLayout.setLayoutParams(llParams);
+//        linearLayout.setBackgroundColor(getColor(R.color.lightGrey));
+
+        LinearLayout entryLayout = new LinearLayout(mContext);
+        entryLayout.setLayoutParams(llParams);
+        entryLayout.setOrientation(VERTICAL);
+//        entryLayout.setBackgroundColor(getColor(R.color.white));
+
+        int ivHeightSetting = 500;
+        //Creates main ImageView
+        mImageView = new ImageView(mContext);
+        ViewGroup.LayoutParams ivParams = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ivHeightSetting);
+        mImageView.setLayoutParams(ivParams);
+        mImageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+
+        //Creates circular progress bar
+        RelativeLayout.LayoutParams pbParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        pbParams.addRule(RelativeLayout.CENTER_IN_PARENT);
+        ProgressBar progressBar = new ProgressBar(mContext);
+        progressBar.setLayoutParams(pbParams);
+
+        //Creates TextViews
+        LinearLayout.LayoutParams snippetParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        snippetParams.setMargins(margin * 2, 0, 0, 0);
+
+        LinearLayout.LayoutParams titleParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        titleParams.setMargins(margin * 2, 0, 0, 0);
+
+        TextView tvUserDate = new TextView(mContext);
+        TextView tvTitle = new TextView(mContext);
+        TextView tvSnippet = new TextView(mContext);
+
+        LinearLayout.LayoutParams userDateParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        userDateParams.gravity = Gravity.END;
+        userDateParams.setMargins(0, margin, margin, 0);
+
+        tvUserDate.setLayoutParams(userDateParams);
+        tvTitle.setLayoutParams(titleParams);
+        tvSnippet.setLayoutParams(snippetParams);
+
+        final String addedBy = "Added by: ";
+        SpannableString italicUserDate = new SpannableString(addedBy + myItem.getUser() + " on " + formatDateForTimestamp(myItem.getTimestamp()));
+        italicUserDate.setSpan(new StyleSpan(Typeface.BOLD_ITALIC), addedBy.length(), addedBy.length() + myItem.getUser().length(), 0);
+
+        SpannableString boldTitle = new SpannableString(myItem.getTitle());
+        boldTitle.setSpan(new StyleSpan(Typeface.BOLD), 0, myItem.getTitle().length(), 0);
+
+        tvUserDate.setText(italicUserDate);
+        tvTitle.setText(boldTitle);
+        tvSnippet.setText(myItem.getSnippet());
+
+        //Close window 'button'
+        ImageView closeWindow = createCloseWindowButton(cardView, topView);
+
+        relativeLayout.addView(mImageView);
+        relativeLayout.addView(closeWindow);
+        relativeLayout.addView(progressBar);
+
+        linearLayout.addView(relativeLayout);
+
+        linearLayout.addView(entryLayout);
+
+        entryLayout.addView(tvUserDate);
+        entryLayout.addView(tvTitle);
+        entryLayout.addView(tvSnippet);
+
+        //comment button
+        LinearLayout.LayoutParams commentButtonParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        commentButtonParams.gravity = Gravity.END;
+        ImageButton ibComment = new ImageButton(mContext);
+        ibComment.setImageDrawable(getDrawable(R.drawable.ic_action_comment));
+        ibComment.setBackground(null);
+        ibComment.setLayoutParams(commentButtonParams);
+        ibComment.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (noPicture) {
+                    cardView.animate()
+                            .translationY(0)
+                            .setInterpolator(new AccelerateDecelerateInterpolator())
+                            .setDuration(animDur);
+                }
+                final LinearLayout linearLayout1 = new LinearLayout(mContext);
+                linearLayout1.setOrientation(VERTICAL);
+                cardView.addView(linearLayout1);
+                linearLayout1.setLayoutParams(new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+                linearLayout1.setBackgroundColor(getColor(R.color.lightGreyTransparent));
+
+                LinearLayout.LayoutParams etParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 300);
+                etParams.setMargins(margin, margin, margin, margin);
+                etParams.gravity = Gravity.TOP;
+
+                final EditText etComment = new EditText(mContext);
+                etComment.setHint("Add a comment...");
+                etComment.setBackgroundColor(getColor(R.color.white));
+                etComment.setPadding(margin, 0, margin, 0);
+                etComment.setLayoutParams(etParams);
+                etComment.setInputType(InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+
+                Button postButton = new Button(mContext);
+                postButton.setText("POST");
+                postButton.getBackground().setColorFilter(getColor(R.color.darkBlue), PorterDuff.Mode.MULTIPLY);
+                Button cancelButton = new Button(mContext);
+                cancelButton.setText("CANCEL");
+
+                linearLayout1.addView(etComment);
+                linearLayout1.addView(postButton);
+                linearLayout1.addView(cancelButton);
+
+                etComment.requestFocus();
+                final InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                inputMethodManager.toggleSoftInputFromWindow(linearLayout1.getApplicationWindowToken(), InputMethodManager.SHOW_IMPLICIT, 0);
+
+                postButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        if (etComment.getText().toString().isEmpty()) {
+                            inputMethodManager.toggleSoftInputFromWindow(linearLayout1.getApplicationWindowToken(), InputMethodManager.HIDE_IMPLICIT_ONLY, 0);
+                            Snackbar.make(findViewById(android.R.id.content),
+                                    "A comment must be entered to post",
+                                    Snackbar.LENGTH_INDEFINITE).setAction("OKAY",
+                                    new View.OnClickListener() {
+                                        @Override
+                                        public void onClick(View v) {
+                                            inputMethodManager.toggleSoftInputFromWindow(linearLayout1.getApplicationWindowToken(), InputMethodManager.SHOW_IMPLICIT, 0);
+                                        }
+                                    }).show();
+//                            Toast.makeText(MapsActivity.this, "A comment must be entered to post", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        Bundle bundle = new Bundle();
+                        bundle.putString(CommentsTable.PIEntry_ID, String.valueOf(myItem.getId()));
+                        bundle.putString(CommentsTable.RATING, "0");
+                        bundle.putString(CommentsTable.COMMENT, etComment.getText().toString());
+                        bundle.putString(CommentsTable.TIMESTAMP, String.valueOf(System.currentTimeMillis()));
+                        bundle.putString(CommentsTable.SOCIAL_MEDIA_ID, Universals.SOCIAL_MEDIA_ID);
+                        dh.insert(bundle, new CommentsTable());
+                        inputMethodManager.toggleSoftInputFromWindow(linearLayout1.getApplicationWindowToken(), InputMethodManager.HIDE_IMPLICIT_ONLY, 0);
+                        cardView.removeView(linearLayout1);
+                        setCommentsAdapter(String.valueOf(myItem.getId()));
+
+//                        if (noPicture) {
+//                            cardView.animate()
+//                                    .translationY(translationY)
+//                                    .setInterpolator(new AccelerateDecelerateInterpolator())
+//                                    .setDuration(animDur);
+//                        }
+                    }
+                });
+
+                cancelButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        cardView.removeView(linearLayout1);
+                        inputMethodManager.toggleSoftInputFromWindow(linearLayout1.getApplicationWindowToken(), InputMethodManager.HIDE_IMPLICIT_ONLY, 0);
+
+//                        if (noPicture) {
+//                            cardView.animate()
+//                                    .translationY(translationY)
+//                                    .setInterpolator(new AccelerateDecelerateInterpolator())
+//                                    .setDuration(animDur);
+//                        }
+                    }
+                });
+            }
+        });
+        entryLayout.addView(ibComment);
+
+        //ListView
+        listView = new ListView(mContext);
+
+        ListView.LayoutParams lvParams = new AbsListView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        listView.setLayoutParams(lvParams);
+
+        setCommentsAdapter(String.valueOf(myItem.getId()));
+
+        linearLayout.addView(listView);
+
+        cardView.addView(linearLayout);
+
+        //load image
+        String bitmapURL = myItem.getBitmapUrlString();
+        if (URLUtil.isValidUrl(bitmapURL)) {
+            Log.d("Bitmap URL", bitmapURL);
+            new DownloadImageTask(mImageView, progressBar).execute(bitmapURL);
+        } else {
+            relativeLayout.removeView(mImageView);
+            relativeLayout.removeView(progressBar);
+//            translationY = ivHeightSetting + 100;
+//            noPicture = true;
+        }
+
+        //open animation
+        int height = cardView.getMeasuredHeight();
+        Log.d("cardView height", String.valueOf(height));
+        cardView.setY(topView.getHeight());
+        cardView.animate()
+                .translationY(height)
+                .setInterpolator(new AccelerateDecelerateInterpolator())
+                .setDuration(animDur);
+
+        return true;
+    }
+
+    private ImageView createCloseWindowButton(final View cardView, final RelativeLayout topView) {
+        final ImageView closeWindow = new ImageView(mContext);
+        closeWindow.setImageDrawable(getDrawable(R.drawable.ic_dialog_close_dark));
+        closeWindow.setColorFilter(LTGRAY);
+        RelativeLayout.LayoutParams fabParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+        fabParams.setMargins(10, 10, 0, 0);
+        closeWindow.setLayoutParams(fabParams);
+        closeWindow.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dh.getAllFromSQL((AfterGetAll) mContext);
+                cardView.animate()
+                        .translationY(topView.getHeight())
+                        .setInterpolator(new AccelerateDecelerateInterpolator())
+                        .setDuration(animDur)
+                        .setListener(new Animator.AnimatorListener() {
+                            @Override
+                            public void onAnimationStart(Animator animation) {
+//                                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+//                                imm.toggleSoftInputFromWindow(closeWindow.getApplicationWindowToken(), InputMethodManager.HIDE_IMPLICIT_ONLY, 0);
+                                unCheckToggleButtons();
+                            }
+
+                            @Override
+                            public void onAnimationEnd(Animator animation) {
+                                topView.removeView(cardView);
+                            }
+
+                            @Override
+                            public void onAnimationCancel(Animator animation) {
+                            }
+
+                            @Override
+                            public void onAnimationRepeat(Animator animation) {
+                            }
+                        });
+            }
+        });
+        return closeWindow;
+    }
+
     void setCommentsAdapter(String id) {
-        System.out.println("id: " + id);
+        listView.animate()
+                .alpha(0f)
+                .setDuration(500)
+                .setListener(new Animator.AnimatorListener() {
+                    @Override
+                    public void onAnimationStart(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationCancel(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationRepeat(Animator animation) {
+
+                    }
+                });
         List<String> commentIds = dh.getComments(id);
-        System.out.println("commentIds: " + commentIds.toString());
         adapter = new CommentsAdapter(mContext, commentIds);
         listView.setAdapter(adapter);
         adapter.notifyDataSetChanged();
         listView.setAlpha(0f);
         listView.animate()
                 .alpha(1f)
-                .setDuration(300)
+                .setDuration(500)
                 .setListener(new Animator.AnimatorListener() {
                     @Override
                     public void onAnimationStart(Animator animation) {
@@ -704,6 +815,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
+    void pickImageFromLibrary(View v) {
+        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+        intent.setType("image/*");
+        startActivityForResult(intent, PICK_IMAGE);
+    }
+
     private int checkPermission(String permission, boolean bool) {
         int result = 0;
         if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
@@ -720,9 +837,68 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         return result;
     }
 
+    private void checkPermission() {
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.READ_EXTERNAL_STORAGE) + ContextCompat
+                .checkSelfPermission(this,
+                        Manifest.permission.CAMERA) + ContextCompat
+                .checkSelfPermission(this,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE) + ContextCompat
+                .checkSelfPermission(this,
+                        Manifest.permission.ACCESS_FINE_LOCATION) + ContextCompat
+                .checkSelfPermission(this,
+                        Manifest.permission.ACCESS_NETWORK_STATE) + ContextCompat
+                .checkSelfPermission(this,
+                        Manifest.permission.INTERNET)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            if (ActivityCompat.shouldShowRequestPermissionRationale
+                    (this, Manifest.permission.READ_EXTERNAL_STORAGE) ||
+                    ActivityCompat.shouldShowRequestPermissionRationale
+                            (this, Manifest.permission.CAMERA) ||
+                    ActivityCompat.shouldShowRequestPermissionRationale
+                            (this, Manifest.permission.WRITE_EXTERNAL_STORAGE) ||
+                    ActivityCompat.shouldShowRequestPermissionRationale
+                            (this, Manifest.permission.ACCESS_FINE_LOCATION) ||
+                    ActivityCompat.shouldShowRequestPermissionRationale
+                            (this, Manifest.permission.ACCESS_NETWORK_STATE) ||
+                    ActivityCompat.shouldShowRequestPermissionRationale
+                            (this, Manifest.permission.INTERNET)) {
+
+                Snackbar.make(this.findViewById(android.R.id.content),
+                        "Please Grant Permissions to share photos as public input",
+                        Snackbar.LENGTH_INDEFINITE).setAction("ENABLE",
+                        new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                requestPermissions(
+                                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE,
+                                                Manifest.permission.CAMERA,
+                                                Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                                                Manifest.permission.ACCESS_FINE_LOCATION,
+                                                Manifest.permission.ACCESS_NETWORK_STATE,
+                                                Manifest.permission.INTERNET},
+                                        PERMISSIONS_MULTIPLE_REQUEST);
+                            }
+                        }).show();
+            } else {
+                requestPermissions(
+                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE,
+                                Manifest.permission.CAMERA,
+                                Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                                Manifest.permission.ACCESS_FINE_LOCATION,
+                                Manifest.permission.ACCESS_NETWORK_STATE,
+                                Manifest.permission.INTERNET},
+                        PERMISSIONS_MULTIPLE_REQUEST);
+            }
+        } else {
+            // write your logic code if permission already granted
+        }
+    }
+
     void getLocation(View v) {
         System.out.println("getting current location!");
-        if(checkPermission(Manifest.permission.ACCESS_FINE_LOCATION, mLocationPermissionGranted)>0) {
+        if (checkPermission(Manifest.permission.ACCESS_FINE_LOCATION, mLocationPermissionGranted) > 0) {
             System.out.println("permission asked");
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                 System.out.println("moving to location!");
@@ -744,10 +920,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
-    private boolean checkIfMarkerExists(LatLng latLng) {
-        return false;
-    }
-
     void moveToPreviousCameraPosition(View v) {
         updateCameraMemory = false;
         previousCameraPositions.remove(previousCameraPositions.size() - 1);
@@ -764,28 +936,26 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         return previousCameraPositions.size() > 1;
     }
 
-    void removePhoto(View v) {
-        if (v instanceof ImageView) {
-            ((ImageView) v).setImageBitmap(null);
-            v.setVisibility(View.INVISIBLE);
-        }
-    }
-
-    void toggleFilter(View v) {
+    void toggleOptions(View v) {
+        LinearLayout ll = null;
         if (v instanceof ToggleButton) {
-            final LinearLayout ll = (LinearLayout) findViewById(R.id.llFilter);
+            switch (v.getId()) {
+                case R.id.filterToggle:
+                    ll = (LinearLayout) findViewById(R.id.llFilter);
+                    break;
+                case R.id.addInputToggle:
+                    ll = (LinearLayout) findViewById(R.id.llAddType);
+            }
             if (((ToggleButton) v).isChecked()) {
-
-//                if(findViewById(R.id.rlPreview).getScaleY()!=0) closePreview(null);
 
                 ll.setVisibility(View.VISIBLE);
                 ll.setAlpha(0);
                 ll.setPivotY(ll.getMeasuredHeight());
-//                ll.setScaleY(0);
+                final LinearLayout finalLl = ll;
                 ll.animate()
                         .setInterpolator(new DecelerateInterpolator())
                         .alpha(1)
-                        .setDuration(300)
+                        .setDuration(animDur)
                         .setListener(new Animator.AnimatorListener() {
                             @Override
                             public void onAnimationStart(Animator animation) {
@@ -793,10 +963,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                             @Override
                             public void onAnimationEnd(Animator animation) {
-                                ll.setVisibility(View.VISIBLE);
-//                                ll.getParent().bringChildToFront(ll);
-//                                ll.getParent().requestLayout();
-//                                ll.setElevation(20f);
+                                finalLl.setVisibility(View.VISIBLE);
                             }
 
                             @Override
@@ -809,10 +976,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         });
             } else {
                 ll.setPivotY(ll.getMeasuredHeight());
+                final LinearLayout finalLl1 = ll;
                 ll.animate()
                         .alpha(0)
                         .setInterpolator(new AccelerateInterpolator())
-                        .setDuration(300)
+                        .setDuration(animDur)
                         .setListener(new Animator.AnimatorListener() {
                             @Override
                             public void onAnimationStart(Animator animation) {
@@ -821,7 +989,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                             @Override
                             public void onAnimationEnd(Animator animation) {
-                                ll.setVisibility(View.GONE);
+                                finalLl1.setVisibility(View.GONE);
                             }
 
                             @Override
@@ -837,7 +1005,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         }
     }
-
 
     void filterMarkers(View v) {
         if (v instanceof CheckBox) {
@@ -904,7 +1071,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
 
         v.setLayoutParams(params);
-
     }
 
     String formatDateForTimestamp(Timestamp timestamp) {
@@ -917,194 +1083,351 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         return timeString;
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
+    private void addPublicInputEntry(Bitmap imageBitmap, final boolean chooseLocation) {
 
-            Bitmap imageBitmap = null;
+        RelativeLayout relativeLayout = new RelativeLayout(this);
 
-            try {
-                imageBitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
+        if (imageBitmap != null) {
             imageBitmap = Universals.sampleBitmap(imageBitmap);
-
-            final RelativeLayout topView = (RelativeLayout) findViewById(R.id.topView);
-            final CardView cardView = new CardView(this);
-
-            CardView.LayoutParams params = new CardView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-            params.setMargins(0, 0, 0, 0);
-            cardView.setLayoutParams(params);
-
-            cardView.setCardBackgroundColor(COLOR_WHITE_ARGB);
-            cardView.setCardElevation(20f);
-            cardView.setClickable(true);
-
-            topView.addView(cardView);
-
-            RelativeLayout relativeLayout = new RelativeLayout(this);
-            relativeLayout.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-
-            final LinearLayout linearLayout = new LinearLayout(this);
-            linearLayout.setOrientation(VERTICAL);
-            linearLayout.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
             final ImageView imageView = new ImageView(this);
             ViewGroup.LayoutParams ivParams = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 700);
             imageView.setLayoutParams(ivParams);
             imageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
-            final EditText titleEdit = new EditText(this);
-            final EditText snippetEdit = new EditText(this);
-            final Spinner spinner = new Spinner(this);
-            Button button = new Button(this);
-            button.setText(R.string.addButton);
-            button.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-
-            titleEdit.setHint("What is it?");
-            titleEdit.setInputType(InputType.TYPE_TEXT_FLAG_IME_MULTI_LINE);
-            snippetEdit.setHint("Tell us about it...");
-            snippetEdit.setInputType(InputType.TYPE_TEXT_FLAG_MULTI_LINE);
-
-            spinner.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, new String[]{"(How do you feel about it?)", "Positive", "Neutral", "Negative"}));
-
-            FloatingActionButton fab = new FloatingActionButton(this);
-            fab.setImageDrawable(getResources().getDrawable(R.drawable.ic_dialog_close_dark));
-            fab.setBackgroundTintList(ColorStateList.valueOf(GRAY));
-            fab.setSize(FloatingActionButton.SIZE_MINI);
-            fab.setRippleColor(RED);
-            fab.setCompatElevation(10f);
-            RelativeLayout.LayoutParams fabParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
-            fabParams.setMargins(10, 10, 0, 0);
-            fab.setLayoutParams(fabParams);
-            fab.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    cardView.animate()
-                            .translationY(topView.getHeight())
-                            .setInterpolator(new AccelerateDecelerateInterpolator())
-                            .setDuration(300)
-                            .setListener(new Animator.AnimatorListener() {
-                                @Override
-                                public void onAnimationStart(Animator animation) {
-
-                                }
-
-                                @Override
-                                public void onAnimationEnd(Animator animation) {
-                                    cardView.setVisibility(View.GONE);
-                                }
-
-                                @Override
-                                public void onAnimationCancel(Animator animation) {
-
-                                }
-
-                                @Override
-                                public void onAnimationRepeat(Animator animation) {
-
-                                }
-                            });
-                }
-            });
-
-            relativeLayout.addView(imageView);
-            relativeLayout.addView(fab);
-
-            linearLayout.addView(relativeLayout);
-
-            linearLayout.addView(titleEdit);
-            linearLayout.addView(snippetEdit);
-            linearLayout.addView(spinner);
-            linearLayout.addView(button);
-
-            cardView.addView(linearLayout);
 
             if (imageView.getDrawable() == null) imageView.setImageBitmap(imageBitmap);
 
-            titleEdit.requestFocus();
-            final InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-            inputMethodManager.toggleSoftInputFromWindow(linearLayout.getApplicationWindowToken(), InputMethodManager.SHOW_FORCED, 0);
+            relativeLayout.addView(imageView);
+        }
 
-            final SendImageFTP sendImageFTP = new SendImageFTP(imageBitmap, this);
+        final RelativeLayout topView = (RelativeLayout) findViewById(R.id.topView);
+        final CardView cardView = new CardView(mContext);
+
+        CardView.LayoutParams params = new CardView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+        params.setMargins(0, 0, 0, 0);
+        cardView.setLayoutParams(params);
+
+        cardView.setCardBackgroundColor(COLOR_WHITE_ARGB);
+        cardView.setCardElevation(20f);
+        cardView.setClickable(true);
+
+        topView.addView(cardView);
+
+        relativeLayout.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        final LinearLayout linearLayout = new LinearLayout(this);
+        linearLayout.setOrientation(VERTICAL);
+        linearLayout.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        final EditText titleEdit = new EditText(this);
+        final EditText snippetEdit = new EditText(this);
+        final Spinner spinner = new Spinner(this);
+        Button button = new Button(this);
+        button.setText(R.string.addButton);
+        button.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        titleEdit.setHint("Add a title");
+        titleEdit.setInputType(InputType.TYPE_TEXT_FLAG_IME_MULTI_LINE);
+        snippetEdit.setHint("Your message");
+        snippetEdit.setInputType(InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+
+        spinner.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, new String[]{"(Type)", "Positive", "Neutral", "Negative"}));
+
+        //Close window 'button'
+        ImageView closeWindow = createCloseWindowButton(cardView, topView);
+
+        relativeLayout.addView(closeWindow);
+
+        linearLayout.addView(relativeLayout);
+
+        linearLayout.addView(titleEdit);
+        linearLayout.addView(snippetEdit);
+        linearLayout.addView(spinner);
+        linearLayout.addView(button);
+
+        cardView.addView(linearLayout);
+
+        titleEdit.requestFocus();
+        final InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        inputMethodManager.toggleSoftInputFromWindow(linearLayout.getApplicationWindowToken(), InputMethodManager.SHOW_IMPLICIT, 0);
+
+        SendImageFTP sendImageFTP = null;
+        if (imageBitmap != null) {
+            sendImageFTP = new SendImageFTP(imageBitmap, this);
             sendImageFTP.execute();
+        }
 
-            button.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    for (int i = 0; i < linearLayout.getChildCount(); i++) {
-                        if (linearLayout.getChildAt(i) instanceof EditText) {
-                            EditText et = (EditText) linearLayout.getChildAt(i);
-                            if (et.getText() == null || et.getText().toString().length() < 2) {
-                                Toast.makeText(MapsActivity.this, "Please complete all the fields", Toast.LENGTH_SHORT).show();
-                                return;
-                            }
-                        } else if (linearLayout.getChildAt(i) instanceof Spinner) {
-                            Spinner spinner = (Spinner) linearLayout.getChildAt(i);
-                            if (spinner.getSelectedItemPosition() == 0) {
-                                Toast.makeText(MapsActivity.this, "Please choose an option from the spinner", Toast.LENGTH_SHORT).show();
-                                return;
-                            }
+        final Bitmap finalImageBitmap = imageBitmap;
+        final SendImageFTP finalSendImageFTP = sendImageFTP;
+
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //Check if all fields are filled
+                for (int i = 0; i < linearLayout.getChildCount(); i++) {
+                    if (linearLayout.getChildAt(i) instanceof EditText) {
+                        EditText et = (EditText) linearLayout.getChildAt(i);
+                        if (et.getText() == null || et.getText().toString().length() < 2) {
+                            inputMethodManager.toggleSoftInputFromWindow(cardView.getApplicationWindowToken(), InputMethodManager.HIDE_IMPLICIT_ONLY, 0);
+                            Snackbar.make(findViewById(android.R.id.content),
+                                    "Please complete all the fields",
+                                    Snackbar.LENGTH_INDEFINITE).setAction("OKAY",
+                                    new View.OnClickListener() {
+                                        @Override
+                                        public void onClick(View v) {
+                                            inputMethodManager.toggleSoftInputFromWindow(cardView.getApplicationWindowToken(), InputMethodManager.SHOW_IMPLICIT, 0);
+                                        }
+                                    }).show();
+//                            Toast.makeText(MapsActivity.this, "Please complete all the fields", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                    } else if (linearLayout.getChildAt(i) instanceof Spinner) {
+                        Spinner spinner = (Spinner) linearLayout.getChildAt(i);
+                        if (spinner.getSelectedItemPosition() == 0) {
+                            inputMethodManager.toggleSoftInputFromWindow(cardView.getApplicationWindowToken(), InputMethodManager.HIDE_IMPLICIT_ONLY, 0);
+                            Snackbar.make(findViewById(android.R.id.content),
+                                    "Please choose an option from the spinner",
+                                    Snackbar.LENGTH_INDEFINITE).setAction("OKAY",
+                                    new View.OnClickListener() {
+                                        @Override
+                                        public void onClick(View v) {
+                                        }
+                                    }).show();
+//                            Toast.makeText(MapsActivity.this, "Please choose an option from the spinner", Toast.LENGTH_SHORT).show();
+                            return;
                         }
                     }
-                    Toast.makeText(MapsActivity.this, "Adding content!", Toast.LENGTH_SHORT).show();
+                }
 
-                    if(checkPermission(Manifest.permission.ACCESS_FINE_LOCATION, mLocationPermissionGranted)>0) {
-                        if (ActivityCompat.checkSelfPermission(mContext, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(mContext, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                            Toast.makeText(mContext, "Cannot access location!", Toast.LENGTH_SHORT).show();
-                            return;
-                        } else {
-                            mFusedLocationClient.getLastLocation().addOnSuccessListener((MapsActivity) mContext, new OnSuccessListener<Location>() {
-                                @Override
-                                public void onSuccess(Location location) {
-                                    if (location != null) {
-                                        mCurrLatLng = new LatLng(location.getLatitude(), location.getLongitude());
-                                        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(mCurrLatLng, 18));
+                //Remember field values
+                final String sentiment = spinner.getSelectedItem().toString().toLowerCase();
+                final String title = titleEdit.getText().toString();
+                final String snippet = snippetEdit.getText().toString();
+
+                //slide out CardView
+                cardView.animate()
+                        .translationY(topView.getHeight())
+                        .setInterpolator(new AccelerateDecelerateInterpolator())
+                        .setDuration(animDur)
+                        .setListener(new Animator.AnimatorListener() {
+                            @Override
+                            public void onAnimationStart(Animator animation) {
+//                                inputMethodManager.toggleSoftInputFromWindow(cardView.getApplicationWindowToken(), InputMethodManager.HIDE_IMPLICIT_ONLY, 0);
+                                unCheckToggleButtons();
+                            }
+
+                            @Override
+                            public void onAnimationEnd(Animator animation) {
+                                topView.removeView(cardView);
+                            }
+
+                            @Override
+                            public void onAnimationCancel(Animator animation) {
+
+                            }
+
+                            @Override
+                            public void onAnimationRepeat(Animator animation) {
+
+                            }
+                        });
+
+                System.out.println("Checking location...");
+                //Check & requests location; handles outcome
+                if (checkPermission(Manifest.permission.ACCESS_FINE_LOCATION, mLocationPermissionGranted) > 0) {
+                    if (ActivityCompat.checkSelfPermission(mContext, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(mContext, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                        Toast.makeText(mContext, "Cannot access location!", Toast.LENGTH_SHORT).show();
+                        System.out.println("Permission not granted");
+                        chooseLocationExec(false, title, snippet, sentiment);
+                    } else {
+                        System.out.println("Permission granted");
+                        mFusedLocationClient.getLastLocation().addOnSuccessListener((MapsActivity) mContext, new OnSuccessListener<Location>() {
+                            @Override
+                            public void onSuccess(Location location) {
+                                if (location == null) {
+                                    Toast.makeText(mContext, "Location permission was granted, but service can't find location. Please turn location on from device settings.", Toast.LENGTH_SHORT).show();
+                                    chooseLocationExec(false, title, snippet, sentiment);
+                                } else {
+                                    mCurrLatLng = new LatLng(location.getLatitude(), location.getLongitude());
+                                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(mCurrLatLng, 25));
+
+                                    if (chooseLocation) {
+                                        chooseLocationExec(location != null, title, snippet, sentiment);
+                                    } else {
                                         Bundle bundle = new Bundle();
-                                        bundle.putString(PIEntryTable.URL, sendImageFTP.getFilename());
+                                        bundle.putString(PIEntryTable.URL, finalImageBitmap != null ? finalSendImageFTP.getFilename() : "");
                                         bundle.putString(PIEntryTable.LATITUDE, String.valueOf(location.getLatitude()));
                                         bundle.putString(PIEntryTable.LONGITUDE, String.valueOf(location.getLongitude()));
-                                        bundle.putString(PIEntryTable.SENTIMENT, spinner.getSelectedItem().toString().toLowerCase());
-                                        bundle.putString(PIEntryTable.TITLE, titleEdit.getText().toString());
-                                        bundle.putString(PIEntryTable.SNIPPET, snippetEdit.getText().toString());
+                                        bundle.putString(PIEntryTable.SENTIMENT, sentiment);
+                                        bundle.putString(PIEntryTable.TITLE, title);
+                                        bundle.putString(PIEntryTable.SNIPPET, snippet);
                                         bundle.putString(PIEntryTable.USER, Universals.NAME);
                                         bundle.putString(PIEntryTable.TIMESTAMP, new Timestamp(System.currentTimeMillis()).toString());
                                         dh.insert(bundle, new PIEntryTable());
+                                        Toast.makeText(MapsActivity.this, "Content added!", Toast.LENGTH_SHORT).show();
                                         addItems(new String[]{null});
                                     }
                                 }
-                            });
-                        }
+                            }
+                        });
+                    }
+                }
+            }
+
+            private void chooseLocationExec(boolean knownLoc, final String title, final String snippet, final String sentiment) {
+                Snackbar.make(findViewById(android.R.id.content),
+                        "Click map or drag marker to position, then click \'OK\'",
+                        Snackbar.LENGTH_INDEFINITE).setAction("THANKS, GOT IT",
+                        new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                            }
+                        }).show();
+//                Toast.makeText(mContext, "Drag marker to desired position; click \'OK\'", Toast.LENGTH_LONG).show();
+                final Button okButton = new Button(mContext);
+                okButton.setText(R.string.OK);
+                RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                layoutParams.addRule(RelativeLayout.ALIGN_PARENT_END);
+                layoutParams.addRule(RelativeLayout.ABOVE, findViewById(R.id.menu).getId());
+
+                okButton.setLayoutParams(layoutParams);
+                topView.addView(okButton);
+
+                if (!knownLoc) {
+                    mCurrLatLng = mMap.getCameraPosition().target;
+                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(mCurrLatLng, 25));
+                }
+
+                BitmapDescriptor mIcon = mIcon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE);
+                switch (sentiment) {
+                    case "positive":
+                        mIcon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN);
+                        break;
+                    case "neutral":
+                        mIcon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW);
+                        break;
+                    case "negative":
+                        mIcon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED);
+                }
+
+                final Marker tempMarker = mMap.addMarker(new MarkerOptions()
+                        .position(mCurrLatLng)
+                        .title("Click map or drag to position; click OK to finish")
+                        .icon(mIcon));
+                tempMarker.setDraggable(true);
+
+                mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+                    @Override
+                    public void onMapClick(LatLng latLng) {
+                        tempMarker.setPosition(latLng);
+                        mMap.animateCamera(CameraUpdateFactory.newLatLng(latLng));
+                    }
+                });
+                mMap.setOnMarkerDragListener(new GoogleMap.OnMarkerDragListener() {
+                    @Override
+                    public void onMarkerDragStart(Marker marker) {
+                        marker.setAlpha(.75f);
                     }
 
-                    cardView.animate()
-                            .translationY(topView.getHeight())
-                            .setInterpolator(new AccelerateDecelerateInterpolator())
-                            .setDuration(300)
-                            .setListener(new Animator.AnimatorListener() {
-                                @Override
-                                public void onAnimationStart(Animator animation) {
+                    @Override
+                    public void onMarkerDrag(Marker marker) {
 
-                                }
+                    }
 
-                                @Override
-                                public void onAnimationEnd(Animator animation) {
-                                    cardView.setVisibility(View.GONE);
-                                }
+                    @Override
+                    public void onMarkerDragEnd(Marker marker) {
+                        mMap.animateCamera(CameraUpdateFactory.newLatLng(marker.getPosition()));
+                        marker.setAlpha(1f);
+                    }
+                });
 
-                                @Override
-                                public void onAnimationCancel(Animator animation) {
+                okButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        mCurrLatLng = tempMarker.getPosition();
+                        tempMarker.remove();
+                        topView.removeView(okButton);
 
-                                }
+                        Bundle bundle = new Bundle();
+                        bundle.putString(PIEntryTable.URL, finalImageBitmap != null ? finalSendImageFTP.getFilename() : "");
+                        bundle.putString(PIEntryTable.LATITUDE, String.valueOf(mCurrLatLng.latitude));
+                        bundle.putString(PIEntryTable.LONGITUDE, String.valueOf(mCurrLatLng.longitude));
+                        bundle.putString(PIEntryTable.SENTIMENT, sentiment);
+                        bundle.putString(PIEntryTable.TITLE, title);
+                        bundle.putString(PIEntryTable.SNIPPET, snippet);
+                        bundle.putString(PIEntryTable.USER, Universals.NAME);
+                        bundle.putString(PIEntryTable.TIMESTAMP, new Timestamp(System.currentTimeMillis()).toString());
+                        dh.insert(bundle, new PIEntryTable());
+                        Toast.makeText(MapsActivity.this, "Content added!", Toast.LENGTH_SHORT).show();
+                        addItems(new String[]{null});
+                    }
+                });
+            }
+        });
+    }
 
-                                @Override
-                                public void onAnimationRepeat(Animator animation) {
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        boolean chooseLocation = false;
+        if (resultCode == RESULT_OK) {
+            Bitmap imageBitmap = null;
+            if (requestCode == REQUEST_IMAGE_CAPTURE) {
 
-                                }
-                            });
+                try {
+                    imageBitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-            });
+            } else if (requestCode == PICK_IMAGE) {
+                chooseLocation = true;
+                InputStream inputStream;
+                try {
+                    inputStream = getContentResolver().openInputStream(data.getData());
+                    imageBitmap = BitmapFactory.decodeStream(inputStream);
+
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            addPublicInputEntry(imageBitmap, chooseLocation);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        switch (requestCode) {
+            case PERMISSIONS_MULTIPLE_REQUEST:
+                if (grantResults.length > 0) {
+                    boolean readExternalFile = grantResults[0] == PackageManager.PERMISSION_GRANTED;
+                    boolean cameraPermission = grantResults[1] == PackageManager.PERMISSION_GRANTED;
+                    boolean writeExternalFile = grantResults[2] == PackageManager.PERMISSION_GRANTED;
+                    boolean accessFineLocation = grantResults[3] == PackageManager.PERMISSION_GRANTED;
+                    boolean accessNetworkState = grantResults[4] == PackageManager.PERMISSION_GRANTED;
+                    boolean internet = grantResults[5] == PackageManager.PERMISSION_GRANTED;
+
+                    if (readExternalFile && cameraPermission && writeExternalFile && accessFineLocation && accessNetworkState && internet) {
+                        // write your logic here
+                    } else {
+                        Snackbar.make(this.findViewById(android.R.id.content),
+                                "Please Grant Permissions to upload profile photo",
+                                Snackbar.LENGTH_INDEFINITE).setAction("ENABLE",
+                                new View.OnClickListener() {
+                                    @Override
+                                    public void onClick(View v) {
+                                        requestPermissions(
+                                                new String[]{Manifest.permission.READ_EXTERNAL_STORAGE,
+                                                        Manifest.permission.CAMERA,
+                                                        Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                                                        Manifest.permission.ACCESS_FINE_LOCATION,
+                                                        Manifest.permission.ACCESS_NETWORK_STATE,
+                                                        Manifest.permission.INTERNET},
+                                                PERMISSIONS_MULTIPLE_REQUEST);
+                                    }
+                                }).show();
+                    }
+                }
+                break;
         }
     }
 
@@ -1163,15 +1486,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 bitmap = universals.getBitmapFromMemoryCache(urlDisplay);
             }
             return bitmap;
-            }
+        }
 
         protected void onPostExecute(Bitmap result) {
+            bmImage.setAlpha(0f);
             bmImage.setImageBitmap(result);
+            bmImage.animate()
+                    .setDuration(500)
+                    .alphaBy(1f);
             progressBar.setVisibility(View.GONE);
         }
     }
 
-    private class SendImageFTP extends AsyncTask<Void, Integer, String>{
+    private class SendImageFTP extends AsyncTask<Void, Integer, String> {
         Bitmap bitmap;
         Context context;
         String filename;
@@ -1187,7 +1514,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         protected String doInBackground(Void... params) {
             //converts bitmap to image file
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            bitmap.compress(Bitmap.CompressFormat.JPEG,100,bos);
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, bos);
             File file = new File(Environment.getExternalStorageDirectory() + File.separator + filename);
 
             try {
@@ -1228,7 +1555,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             progressDialog.dismiss();
         }
 
-        String getFilename(){
+        String getFilename() {
             return filename;
         }
     }

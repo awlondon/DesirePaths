@@ -9,7 +9,6 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
-import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -111,7 +110,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     synchronized void getAllFromSQL(AfterGetAll afterGetAll) {
         final Table[] tables = new Table[]{new PIEntryTable(), new CommentsTable(), new UserTable()};
 
-        Toast.makeText(mContext, "Synchronizing...", Toast.LENGTH_SHORT).show();
+//        Toast.makeText(mContext, "Synchronizing...", Toast.LENGTH_SHORT).show();
 
         for (Table table : tables) {
             String sql = querySQLString(table.tableName(), null, null);
@@ -488,7 +487,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            Toast.makeText(mContext, "Updating...", Toast.LENGTH_SHORT).show();
+//            Toast.makeText(mContext, "Updating...", Toast.LENGTH_SHORT).show();
         }
         @Override
         protected void onPostExecute(String httpResponseMsg) {
