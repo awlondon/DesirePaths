@@ -1,8 +1,13 @@
 package com.pdceng.www.desirepaths;
 
+import android.content.Context;
+import android.graphics.Bitmap;
+
 import com.google.android.gms.maps.model.LatLng;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
+
+import java.util.concurrent.ExecutionException;
 
 /**
  * Created by alondon on 7/27/2017.
@@ -43,6 +48,12 @@ public class PublicInput {
     @SerializedName("timestamp")
     @Expose
     private String timestamp;
+    private Context context;
+
+
+    public PublicInput(Context context) {
+        this.context = context;
+    }
 
     public String getID() { return ID; }
 
@@ -114,5 +125,13 @@ public class PublicInput {
 
     public void setTimestamp(String timestamp) {
         this.timestamp = timestamp;
+    }
+
+    //Non-trivial
+    public Bitmap getBitmap() throws ExecutionException, InterruptedException {
+        DownloadImageTask downloadImageTask = new DownloadImageTask(context);
+        downloadImageTask.execute(url);
+        return downloadImageTask.get();
+
     }
 }

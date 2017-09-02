@@ -4,9 +4,11 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.provider.ContactsContract;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -146,7 +148,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         int i = 0;
         for (Bundle bundle : bundles) {
-            PublicInput publicInput = new PublicInput();
+            PublicInput publicInput = new PublicInput(mContext);
             publicInput.setID(String.valueOf(bundle.getInt(PIEntryTable.ID)));
             publicInput.setLatitude(Double.valueOf(bundle.getString(PIEntryTable.LATITUDE)));
             publicInput.setLongitude(Double.valueOf(bundle.getString(PIEntryTable.LONGITUDE)));
@@ -178,15 +180,19 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     private synchronized String[] getUserPIRatings() {
-        Bundle user = getRow(new UserTable(), UserTable.SOCIAL_MEDIA_ID, Universals.SOCIAL_MEDIA_ID);
+        if (Universals.NAME != null) {
+            Bundle user = getRow(new UserTable(), UserTable.SOCIAL_MEDIA_ID, Universals.SOCIAL_MEDIA_ID);
 
-        String agree = user.getString(UserTable.PI_AGREE);
-        String disagree = user.getString(UserTable.PI_DISAGREE);
-        String concat = "";
-        if (agree != null && !agree.isEmpty()) concat += agree;
-        if (disagree != null && !disagree.isEmpty()) concat += disagree;
+            String agree = user.getString(UserTable.PI_AGREE);
+            String disagree = user.getString(UserTable.PI_DISAGREE);
+            String concat = "";
+            if (agree != null && !agree.isEmpty()) concat += agree;
+            if (disagree != null && !disagree.isEmpty()) concat += disagree;
 
-        return !concat.isEmpty() ? concat.split(";") : null;
+            return !concat.isEmpty() ? concat.split(";") : null;
+        } else {
+            return null;
+        }
     }
 
     synchronized void updateUserPIRatings(String piID, boolean agree) {
@@ -256,30 +262,34 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     synchronized int checkRatingGiven(String commentId) {
-        Bundle bundle = getRow(new UserTable(), UserTable.SOCIAL_MEDIA_ID, Universals.SOCIAL_MEDIA_ID);
+        if (Universals.NAME!=null) {
+            Bundle bundle = getRow(new UserTable(), UserTable.SOCIAL_MEDIA_ID, Universals.SOCIAL_MEDIA_ID);
 
-        String prs = bundle.getString(UserTable.POSITIVE_RATINGS);
-        String nrs = bundle.getString(UserTable.NEGATIVE_RATINGS);
-        int result = NO_RATING_GIVEN;
-        if (prs != null && !Objects.equals(prs, "")) {
-            String[] prsArray = prs.split(";");
-            for (String aPrsArray : prsArray) {
-                if (Objects.equals(aPrsArray, commentId)) {
-                    result = POS_RATING_GIVEN;
-                    break;
+            String prs = bundle.getString(UserTable.POSITIVE_RATINGS);
+            String nrs = bundle.getString(UserTable.NEGATIVE_RATINGS);
+            int result = NO_RATING_GIVEN;
+            if (prs != null && !Objects.equals(prs, "")) {
+                String[] prsArray = prs.split(";");
+                for (String aPrsArray : prsArray) {
+                    if (Objects.equals(aPrsArray, commentId)) {
+                        result = POS_RATING_GIVEN;
+                        break;
+                    }
                 }
             }
-        }
-        if (result == NO_RATING_GIVEN && nrs != null && !Objects.equals(nrs, "")) {
-            String[] nrsArray = nrs.split(";");
-            for (String aNrsArray : nrsArray) {
-                if (Objects.equals(aNrsArray, commentId)) {
-                    result = NEG_RATING_GIVEN;
-                    break;
+            if (result == NO_RATING_GIVEN && nrs != null && !Objects.equals(nrs, "")) {
+                String[] nrsArray = nrs.split(";");
+                for (String aNrsArray : nrsArray) {
+                    if (Objects.equals(aNrsArray, commentId)) {
+                        result = NEG_RATING_GIVEN;
+                        break;
+                    }
                 }
             }
+            return result;
+        } else {
+            return NO_RATING_GIVEN;
         }
-        return result;
     }
 
     private synchronized void updateRatingsGivenByUser(boolean positive, String commentId) {
@@ -365,9 +375,16 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     boolean isUser(String... social_media_id) {
         SQLiteDatabase db = getReadableDatabase();
-        Cursor c = db.query(UserTable.TABLE_NAME, null, UserTable.SOCIAL_MEDIA_ID + "=?", social_media_id, null, null, null);
-        boolean result = c.moveToFirst();
-        c.close();
+        Cursor c = null;
+        try {
+            c = db.query(UserTable.TABLE_NAME, null, UserTable.SOCIAL_MEDIA_ID + "=?", social_media_id, null, null, null);
+        } catch (SQLiteException ignored){
+
+        }
+        boolean result = c == null || c.moveToFirst();
+        if (c != null) {
+            c.close();
+        }
         db.close();
         return result;
     }

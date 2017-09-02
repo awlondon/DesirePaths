@@ -168,6 +168,8 @@ public class LoginActivity extends FragmentActivity implements AfterGetAll {
             checkUser();
         } else {
             Toast.makeText(this, "Could not sign-in!", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(this,MapsActivity.class);
+            startActivity(intent);
         }
     }
 

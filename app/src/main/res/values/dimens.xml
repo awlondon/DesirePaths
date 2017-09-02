@@ -5,4 +5,5 @@
     <dimen name="preview_height_max">400dp</dimen>
     <dimen name="card_margin">10dp</dimen>
     <dimen name="entry_height">200dp</dimen>
+    <dimen name="text_margin">8dp</dimen>
 </resources>

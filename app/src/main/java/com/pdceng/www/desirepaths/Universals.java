@@ -90,7 +90,7 @@ public class Universals {
         return inSampleSize;
     }
 
-    Bitmap getBitmapFromURL(String image, int reqWidth, int reqHeight) {
+    static Bitmap getBitmapFromURL(String image, int reqWidth, int reqHeight) {
         //Rect is an object class that contains the lengths of the 4 sides of a rectangle.
         Rect rect = new Rect(0, 0, 0, 0);
         //A BitmapFactory is a class that creates bitmaps.
@@ -130,18 +130,18 @@ public class Universals {
         return null;
     }
 
-    String addBitmapToMemoryCache(String key, Bitmap bitmap) {
+    static String addBitmapToMemoryCache(String key, Bitmap bitmap) {
         if (getBitmapFromMemoryCache(key) == null) {
             bitmapMemoryCache.put(key, bitmap);
         }
         return key;
     }
 
-    Bitmap getBitmapFromMemoryCache(String key) {
+    static Bitmap getBitmapFromMemoryCache(String key) {
         return bitmapMemoryCache.get(key);
     }
 
-    boolean isBitmapInMemoryCache(String key) {
+    static boolean isBitmapInMemoryCache(String key) {
         return bitmapMemoryCache.get(key) != null;
     }
 }

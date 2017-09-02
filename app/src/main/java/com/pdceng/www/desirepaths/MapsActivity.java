@@ -2,6 +2,7 @@ package com.pdceng.www.desirepaths;
 
 import android.Manifest;
 import android.animation.Animator;
+import android.app.Fragment;
 import android.app.ProgressDialog;
 import android.content.ContentValues;
 import android.content.Context;
@@ -23,8 +24,12 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.CardView;
+import android.support.v7.widget.RecyclerView;
 import android.text.InputType;
 import android.text.SpannableString;
 import android.text.style.StyleSpan;
@@ -106,7 +111,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import static android.graphics.Color.LTGRAY;
 import static android.widget.LinearLayout.VERTICAL;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnInfoWindowClickListener, AfterGetAll {
+public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleMap.OnInfoWindowClickListener, AfterGetAll, PublicInputListFragment.OnListFragmentInteractionListener
+{
     static final int delay_getAll = 30;
     private static final String TAG = "tag";
     private static final int REQUEST_IMAGE_CAPTURE = 1;
@@ -169,9 +175,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private int animDur = 200;
     private int ivHeightSetting = 700;
 
+    FragmentManager fragmentManager;
+    FragmentTransaction fragmentTransaction;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        new PublicInputContent(this);
         setContentView(R.layout.activity_maps);
         universals = new Universals(this);
         setClickListeners();
@@ -258,10 +268,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 filterMarkers(v);
             }
         });
+        findViewById(R.id.list).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                loadListFragment(view);
+            }
+        });
     }
 
     private void bringUpMap() {
-        Toast.makeText(mContext, "Welcome, " + Universals.NAME.split(" ")[0], Toast.LENGTH_SHORT).show();
+        if(Universals.NAME!=null){
+            Toast.makeText(mContext, "Welcome, " + Universals.NAME.split(" ")[0], Toast.LENGTH_SHORT).show();
+        }
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -497,7 +515,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         LinearLayout.LayoutParams commentButtonParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         commentButtonParams.gravity = Gravity.END;
         ImageButton ibComment = new ImageButton(mContext);
-        ibComment.setImageDrawable(getDrawable(R.drawable.ic_action_comment));
+        ibComment.setImageResource(R.drawable.ic_event_note_black_24dp);
+//        ibComment.setImageDrawable(getDrawable(R.drawable.ic_action_comment));
         ibComment.setBackground(null);
         ibComment.setLayoutParams(commentButtonParams);
         ibComment.setOnClickListener(new View.OnClickListener() {
@@ -629,6 +648,16 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .setDuration(animDur);
 
         return true;
+    }
+
+    private void loadListFragment(View v) {
+//        new PublicInputContent(this);
+//        PublicInputListFragment publicInputListFragment = new PublicInputListFragment();
+//        RelativeLayout topView = (RelativeLayout) findViewById(R.id.topView);
+//        RecyclerView rv = new RecyclerView(this);
+//        rv.setId(R.id.listView);
+//        getFragmentManager().beginTransaction().add(R.id.piList, PublicInputListFragment.newInstance(null)).commit();
+//        topView.addView(rv);
     }
 
     private ImageView createCloseWindowButton(final View cardView, final RelativeLayout topView) {
@@ -1441,6 +1470,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void afterGetAll() {
         setUpCluster();
+    }
+
+    @Override
+    public void onListFragmentInteraction(PublicInput item) {
+
     }
 
     private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
