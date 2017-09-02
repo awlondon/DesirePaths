@@ -1,6 +1,9 @@
 package com.pdceng.www.desirepaths;
 
+import android.graphics.Typeface;
 import android.support.v7.widget.RecyclerView;
+import android.text.SpannableString;
+import android.text.style.StyleSpan;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -42,7 +45,10 @@ public class MyPublicInputRecyclerViewAdapter extends RecyclerView.Adapter<MyPub
         } catch (ExecutionException | InterruptedException e) {
             e.printStackTrace();
         }
-        holder.mTitleView.setText(mValues.get(position).getTitle());
+        String title = mValues.get(position).getTitle();
+        SpannableString ssTitle = new SpannableString(title);
+        ssTitle.setSpan(new StyleSpan(Typeface.BOLD), 0, ssTitle.length(), 0);
+        holder.mTitleView.setText(ssTitle);
         holder.mSnippetView.setText(mValues.get(position).getSnippet());
 
         holder.mView.setOnClickListener(new View.OnClickListener() {

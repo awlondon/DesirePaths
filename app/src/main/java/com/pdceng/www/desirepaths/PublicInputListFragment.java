@@ -21,7 +21,7 @@ public class PublicInputListFragment extends android.app.Fragment {
     // TODO: Customize parameter argument names
     private static final String ARG_COLUMN_COUNT = "column-count";
     // TODO: Customize parameters
-    private int mColumnCount = 2;
+    private int mColumnCount = 1;
     private OnListFragmentInteractionListener mListener;
 
     /**
@@ -34,7 +34,7 @@ public class PublicInputListFragment extends android.app.Fragment {
     // TODO: Customize parameter initialization
     @SuppressWarnings("unused")
     public static PublicInputListFragment newInstance(Integer columnCount) {
-        if(columnCount==null) columnCount = 2;
+        if(columnCount==null) columnCount = 1;
         PublicInputListFragment fragment = new PublicInputListFragment();
         Bundle args = new Bundle();
         args.putInt(ARG_COLUMN_COUNT, columnCount);

@@ -131,7 +131,9 @@ public class PublicInput {
     public Bitmap getBitmap() throws ExecutionException, InterruptedException {
         DownloadImageTask downloadImageTask = new DownloadImageTask(context);
         downloadImageTask.execute(url);
-        return downloadImageTask.get();
+        Bitmap bitmap = downloadImageTask.get();
+//        bitmap = Universals.sampleBitmap(bitmap);
+        return bitmap;
 
     }
 }

@@ -16,12 +16,14 @@
             android:layout_height="match_parent"
             android:layout_alignParentStart="true"
             android:layout_alignParentTop="true"
-            tools:context="com.pdceng.www.desirepaths.MapsActivity" />
+            tools:context="com.pdceng.www.desirepaths.MapsActivity"
+            android:layout_above="@+id/menu" />
         <fragment
             android:id="@+id/piList"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:name="com.pdceng.www.desirepaths.PublicInputListFragment"/>
+            android:name="com.pdceng.www.desirepaths.PublicInputListFragment"
+            android:layout_above="@+id/menu" />
 
         <android.support.design.widget.FloatingActionButton
             android:id="@+id/myLocation"
@@ -73,7 +75,7 @@
                 android:textOff=" "
                 android:textOn=" " />
 
-            <Button
+            <ImageButton
                 android:id="@+id/bCards"
                 style="@android:style/Widget.Material.ImageButton"
                 android:layout_width="wrap_content"
@@ -81,7 +83,7 @@
                 android:layout_alignParentBottom="true"
                 android:layout_weight="1"
                 android:background="@color/colorPrimaryDark"
-                android:drawableTop="@drawable/ic_action_thumbs" />
+                android:src="@drawable/thumbs_up_down"/>
 
             <ToggleButton
                 android:id="@+id/filterToggle"
@@ -104,24 +106,24 @@
                 android:elevation="0dp"
                 android:src="@drawable/ic_view_list" />
 
-            <Button
+            <ImageButton
                 android:id="@+id/zoomOut"
                 android:layout_width="wrap_content"
                 android:layout_height="@dimen/menu_button_height"
                 android:layout_weight="1"
                 android:background="@color/colorPrimaryDark"
                 android:clickable="true"
-                android:drawableTop="@drawable/ic_zoom_out"
+                android:src="@drawable/ic_zoom_out"
                 android:elevation="0dp" />
 
-            <Button
+            <ImageButton
                 android:id="@+id/zoomIn"
                 android:layout_width="wrap_content"
                 android:layout_height="@dimen/menu_button_height"
                 android:layout_weight="1"
                 android:background="@color/colorPrimaryDark"
                 android:clickable="true"
-                android:drawableTop="@drawable/ic_zoom_in"
+                android:src="@drawable/ic_zoom_in"
                 android:elevation="0dp" />
 
         </LinearLayout>
