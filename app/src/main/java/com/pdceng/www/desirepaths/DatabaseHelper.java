@@ -76,9 +76,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     synchronized long insert(Bundle bundle, Table table) {
+        System.out.println("Starting insert!");
         SQLiteDatabase db = getWritableDatabase();
         ContentValues cv = new ContentValues();
-        for (String field : table.getFields()) cv.put(field, bundle.getString(field));
+        for (String field : table.getFields()) {
+            cv.put(field, bundle.getString(field));
+        }
 
         long result = db.insert(table.tableName(), table.nullColumnHack(), cv);
 
@@ -363,7 +366,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     boolean isUser(String... social_media_id) {
         SQLiteDatabase db = getReadableDatabase();
         Cursor c = db.query(UserTable.TABLE_NAME, null, UserTable.SOCIAL_MEDIA_ID + "=?", social_media_id, null, null, null);
-        boolean result = c != null;
+        boolean result = c.moveToFirst();
         c.close();
         db.close();
         return result;

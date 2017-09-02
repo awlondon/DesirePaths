@@ -167,6 +167,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private Uri imageUri;
     private Universals universals;
     private int animDur = 200;
+    private int ivHeightSetting = 700;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -239,20 +240,28 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 moveToPreviousCameraPosition(v);
             }
         });
+        findViewById(R.id.cbPositive).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                filterMarkers(v);
+            }
+        });
+        findViewById(R.id.cbNeutral).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                filterMarkers(v);
+            }
+        });
+        findViewById(R.id.cbNegative).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                filterMarkers(v);
+            }
+        });
     }
 
     private void bringUpMap() {
-        Snackbar.make(this.findViewById(android.R.id.content),
-                "Welcome, " + Universals.NAME.split(" ")[0] + "!",
-                Snackbar.LENGTH_INDEFINITE).setAction("THANKS",
-                new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        //Enter code logic here
-                    }
-                }).show();
-
-//        Toast.makeText(mContext, "Welcome, " + Universals.NAME.split(" ")[0], Toast.LENGTH_SHORT).show();
+        Toast.makeText(mContext, "Welcome, " + Universals.NAME.split(" ")[0], Toast.LENGTH_SHORT).show();
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -427,7 +436,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         entryLayout.setOrientation(VERTICAL);
 //        entryLayout.setBackgroundColor(getColor(R.color.white));
 
-        int ivHeightSetting = 500;
         //Creates main ImageView
         mImageView = new ImageView(mContext);
         ViewGroup.LayoutParams ivParams = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ivHeightSetting);
@@ -601,7 +609,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         //load image
         String bitmapURL = myItem.getBitmapUrlString();
-        if (URLUtil.isValidUrl(bitmapURL)) {
+        if (URLUtil.isValidUrl(bitmapURL) || !bitmapURL.isEmpty()) {
             Log.d("Bitmap URL", bitmapURL);
             new DownloadImageTask(mImageView, progressBar).execute(bitmapURL);
         } else {
@@ -800,12 +808,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     void dispatchTakePictureIntent(View v) {
-        if (checkPermission(Manifest.permission.CAMERA, mCameraPermissionGranted) > 0 && checkPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, mStoragePermissionGranted) > 0) {
+        if (checkPermission(Manifest.permission.CAMERA, mCameraPermissionGranted) > 0
+                && checkPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, mStoragePermissionGranted) > 0) {
             ContentValues values = new ContentValues();
             values.put(MediaStore.Images.Media.TITLE, "New Picture");
             values.put(MediaStore.Images.Media.DESCRIPTION, "From your Camera");
-            imageUri = getContentResolver().insert(
-                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+            imageUri = getContentResolver()
+                    .insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
             Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
             intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
 
@@ -1084,7 +1093,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private void addPublicInputEntry(Bitmap imageBitmap, final boolean chooseLocation) {
-
         RelativeLayout relativeLayout = new RelativeLayout(this);
 
         if (imageBitmap != null) {
@@ -1298,7 +1306,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(mCurrLatLng, 25));
                 }
 
-                BitmapDescriptor mIcon = mIcon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE);
+                BitmapDescriptor mIcon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE);
                 switch (sentiment) {
                     case "positive":
                         mIcon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN);
@@ -1384,12 +1392,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 try {
                     inputStream = getContentResolver().openInputStream(data.getData());
                     imageBitmap = BitmapFactory.decodeStream(inputStream);
-
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();
                 }
             }
-
+            System.out.println("imageBitmap: " + imageBitmap);
             addPublicInputEntry(imageBitmap, chooseLocation);
         }
     }
@@ -1533,14 +1540,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 ftp.bin();
                 if (ftp.stor(file)) {
                     // TODO: 8/16/2017 Close progress bar on main thread
+                    progressDialog.dismiss();
                 }
                 ftp.disconnect();
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
             return null;
-
         }
 
         @Override
@@ -1552,7 +1558,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         @Override
         protected void onPostExecute(String s) {
             super.onPostExecute(s);
-            progressDialog.dismiss();
         }
 
         String getFilename() {

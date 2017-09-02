@@ -8,37 +8,33 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="80dp"
+        android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_gravity="bottom"
         android:gravity="center"
         android:orientation="horizontal">
 
-        <android.support.design.widget.FloatingActionButton
+        <ImageButton
             android:id="@+id/rejectBtn"
-            android:layout_width="50dp"
+            android:layout_width="match_parent"
             android:layout_height="50dp"
-            android:layout_marginBottom="5dp"
+            android:layout_weight="1"
             android:onClick="noSwipe"
             app:backgroundTint="@android:color/holo_red_dark"
-            app:elevation="4dp"
-            app:fabSize="mini"
             app:srcCompat="@drawable/ic_action_dislike" />
 
-        <android.support.design.widget.FloatingActionButton
+        <ImageButton
             android:id="@+id/acceptBtn"
-            android:layout_width="50dp"
+            android:layout_width="match_parent"
             android:layout_height="50dp"
-            android:layout_marginBottom="5dp"
-            android:layout_marginStart="30dp"
+            android:layout_weight="1"
             android:onClick="swipe"
             app:backgroundTint="@android:color/holo_green_light"
-            app:fabSize="mini"
             app:srcCompat="@drawable/ic_action_like" />
     </LinearLayout>
 
     <com.mindorks.placeholderview.SwipePlaceHolderView
         android:id="@+id/swipeView"
         android:layout_width="match_parent"
-        android:layout_height="432dp" />
+        android:layout_height="wrap_content" />
 </RelativeLayout>

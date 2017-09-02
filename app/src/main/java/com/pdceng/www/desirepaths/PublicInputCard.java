@@ -109,7 +109,7 @@ public class PublicInputCard {
     private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
         ImageView bmImage;
 
-        public DownloadImageTask(ImageView bmImage) {
+        DownloadImageTask(ImageView bmImage) {
             this.bmImage = bmImage;
         }
 
@@ -122,7 +122,7 @@ public class PublicInputCard {
 
         protected Bitmap doInBackground(String... urls) {
             String urlDisplay = urls[0];
-            System.out.println(urlDisplay);
+//            System.out.println(urlDisplay);
             Bitmap bitmap = null;
 
             if (!URLUtil.isValidUrl(urlDisplay)) {
@@ -130,13 +130,13 @@ public class PublicInputCard {
                     FTPClient ftpClient = new FTPClient();
                     System.out.println("Starting connection to FTP site!");
                     try {
-                        ftpClient.connect("host2.bakop.com");
-                        ftpClient.login("pdceng", "Anchorage_0616");
+                        ftpClient.connect("153.92.6.4");
+                        ftpClient.login(mContext.getResources().getString(R.string.ftp_username), mContext.getResources().getString(R.string.ftp_password));
                         ftpClient.enterLocalPassiveMode();
                         ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
 
                         File file = new File(Environment.getExternalStorageDirectory() + File.separator + urlDisplay);
-                        Log.d("filepath:", file.getAbsolutePath());
+                        Log.d("filepath", file.getAbsolutePath());
                         FileOutputStream fos = new FileOutputStream(file);
                         ftpClient.retrieveFile(urlDisplay, fos);
                         fos.flush();
@@ -145,12 +145,14 @@ public class PublicInputCard {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
+                    System.out.println("urlDisplay: " + urlDisplay);
+                    System.out.println("bitmap: " + bitmap);
                     universals.addBitmapToMemoryCache(urlDisplay, bitmap);
                 }
                 bitmap = universals.getBitmapFromMemoryCache(urlDisplay);
             } else {
                 if (!universals.isBitmapInMemoryCache(urlDisplay)) {
-                    universals.addBitmapToMemoryCache(urlDisplay, universals.getBitmapFromURL(urlDisplay, 100, 100));
+                    universals.addBitmapToMemoryCache(urlDisplay, universals.getBitmapFromURL(urlDisplay, 500, 500));
                 }
                 bitmap = universals.getBitmapFromMemoryCache(urlDisplay);
             }

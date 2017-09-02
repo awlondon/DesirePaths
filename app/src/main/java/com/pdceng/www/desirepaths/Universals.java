@@ -57,12 +57,15 @@ public class Universals {
         int width = bitmap.getWidth();
         int height = bitmap.getHeight();
 
-        Log.d("width", String.valueOf(width));
-        Log.d("height", String.valueOf(height));
+        Log.d("starting width", String.valueOf(width));
+        Log.d("starting height", String.valueOf(height));
 
         float scaleFactor = (float) 700 / height;
         int newHeight = (int) (height * scaleFactor);
         int newWidth = (int) (width * scaleFactor);
+
+        Log.d("new width", String.valueOf(newWidth));
+        Log.d("new height", String.valueOf(newHeight));
 
         return Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true);
     }

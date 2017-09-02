@@ -180,7 +180,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:checked="true"
-                android:onClick="filterMarkers"
                 android:text="Positive" />
 
             <CheckBox
@@ -188,7 +187,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:checked="true"
-                android:onClick="filterMarkers"
                 android:text="Neutral" />
 
             <CheckBox
@@ -197,7 +195,6 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:checked="true"
-                android:onClick="filterMarkers"
                 android:text="Negative" />
         </LinearLayout>
 

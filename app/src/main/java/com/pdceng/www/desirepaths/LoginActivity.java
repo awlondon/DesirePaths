@@ -147,8 +147,7 @@ public class LoginActivity extends FragmentActivity implements AfterGetAll {
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data)
-    {
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == RC_SIGN_IN) {
             GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
@@ -156,7 +155,6 @@ public class LoginActivity extends FragmentActivity implements AfterGetAll {
         } else {
             callbackManager.onActivityResult(requestCode, resultCode, data);
         }
-
     }
 
     private void handleSignInResult(GoogleSignInResult result) {
@@ -175,6 +173,7 @@ public class LoginActivity extends FragmentActivity implements AfterGetAll {
 
     boolean checkUser() {
         if (dh.isUser(social_media_id)) {
+            System.out.println("User is found!");
             Universals.SOCIAL_MEDIA_ID = social_media_id;
             Universals.NAME = name;
         } else {
