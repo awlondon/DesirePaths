@@ -53,7 +53,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
-            android:background="@color/cardview_dark_background"
+            android:background="@color/colorPrimaryDark"
             android:orientation="horizontal"
             android:padding="10dp">
 
@@ -64,7 +64,7 @@
                 android:layout_height="@dimen/menu_button_height"
                 android:layout_toEndOf="@+id/bCards"
                 android:layout_weight="1"
-                android:background="@color/cardview_dark_background"
+                android:background="@color/colorPrimaryDark"
                 android:drawableTop="@drawable/ic_action_add"
                 android:textOff=" "
                 android:textOn=" " />
@@ -76,7 +76,7 @@
                 android:layout_height="@dimen/menu_button_height"
                 android:layout_alignParentBottom="true"
                 android:layout_weight="1"
-                android:background="@color/cardview_dark_background"
+                android:background="@color/colorPrimaryDark"
                 android:drawableTop="@drawable/ic_action_cards" />
 
             <ToggleButton
@@ -86,7 +86,7 @@
                 android:layout_height="@dimen/menu_button_height"
                 android:layout_alignParentBottom="true"
                 android:layout_weight="1"
-                android:background="@color/cardview_dark_background"
+                android:background="@color/colorPrimaryDark"
                 android:drawableTop="@drawable/ic_action_filter"
                 android:textOff=" "
                 android:textOn=" " />
@@ -97,7 +97,7 @@
                 android:layout_height="@dimen/menu_button_height"
                 android:layout_alignParentBottom="false"
                 android:layout_weight="1"
-                android:background="@color/cardview_dark_background"
+                android:background="@color/colorPrimaryDark"
                 android:clickable="true"
                 android:drawableTop="@drawable/ic_zoom_out"
                 android:elevation="0dp" />
@@ -109,7 +109,7 @@
                 android:layout_alignParentBottom="false"
                 android:layout_alignParentEnd="false"
                 android:layout_weight="1"
-                android:background="@color/cardview_dark_background"
+                android:background="@color/colorPrimaryDark"
                 android:clickable="true"
                 android:drawableTop="@drawable/ic_zoom_in"
                 android:elevation="0dp" />
