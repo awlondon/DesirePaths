@@ -18,32 +18,34 @@
             android:layout_alignParentTop="true"
             tools:context="com.pdceng.www.desirepaths.MapsActivity"
             android:layout_above="@+id/menu" />
-        <fragment
-            android:id="@+id/piList"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:name="com.pdceng.www.desirepaths.PublicInputListFragment"
-            android:layout_above="@+id/menu" />
+
+        <!--<fragment-->
+            <!--android:id="@+id/piList"-->
+            <!--android:name="com.pdceng.www.desirepaths.PublicInputListFragment"-->
+            <!--class="com.pdceng.www.desirepaths.PublicInputListFragment"-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="match_parent"-->
+            <!--android:layout_above="@+id/menu" />-->
 
         <android.support.design.widget.FloatingActionButton
             android:id="@+id/myLocation"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
             android:layout_alignParentEnd="true"
             android:layout_alignParentTop="true"
             android:layout_marginEnd="20dp"
             android:layout_marginTop="20dp"
             android:elevation="0dp"
             android:visibility="visible"
-            map:backgroundTint="@color/cardview_dark_background"
+            map:backgroundTint="@color/cardview_shadow_start_color"
             map:fabSize="mini"
-            map:rippleColor="#e7a900"
-            map:srcCompat="@android:drawable/ic_menu_mylocation" />
+            map:rippleColor="@color/lightGrey"
+            map:srcCompat="@drawable/ic_my_location" />
 
         <android.support.design.widget.FloatingActionButton
             android:id="@+id/prevMap"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
             android:layout_alignParentStart="true"
             android:layout_alignTop="@+id/myLocation"
             android:layout_marginStart="14dp"
@@ -52,7 +54,7 @@
             android:visibility="invisible"
             map:backgroundTint="@color/darkBlue"
             map:fabSize="mini"
-            map:srcCompat="@drawable/ic_action_return" />
+            map:srcCompat="@drawable/ic_return" />
 
         <LinearLayout
             android:id="@+id/menu"
@@ -78,12 +80,11 @@
             <ImageButton
                 android:id="@+id/bCards"
                 style="@android:style/Widget.Material.ImageButton"
-                android:layout_width="wrap_content"
+                android:layout_width="80dp"
                 android:layout_height="@dimen/menu_button_height"
-                android:layout_alignParentBottom="true"
                 android:layout_weight="1"
                 android:background="@color/colorPrimaryDark"
-                android:src="@drawable/thumbs_up_down"/>
+                android:src="@drawable/ic_thumbs_up_down" />
 
             <ToggleButton
                 android:id="@+id/filterToggle"
@@ -108,7 +109,7 @@
 
             <ImageButton
                 android:id="@+id/zoomOut"
-                android:layout_width="wrap_content"
+                android:layout_width="80dp"
                 android:layout_height="@dimen/menu_button_height"
                 android:layout_weight="1"
                 android:background="@color/colorPrimaryDark"
@@ -118,13 +119,13 @@
 
             <ImageButton
                 android:id="@+id/zoomIn"
-                android:layout_width="wrap_content"
+                android:layout_width="80dp"
                 android:layout_height="@dimen/menu_button_height"
                 android:layout_weight="1"
                 android:background="@color/colorPrimaryDark"
                 android:clickable="true"
-                android:src="@drawable/ic_zoom_in"
-                android:elevation="0dp" />
+                android:elevation="0dp"
+                android:src="@drawable/ic_zoom_in" />
 
         </LinearLayout>
 
@@ -149,7 +150,7 @@
                 android:visibility="visible"
                 map:backgroundTint="@color/darkGrey"
                 map:fabSize="mini"
-                map:srcCompat="@drawable/ic_action_add_note" />
+                map:srcCompat="@drawable/ic_add_note" />
 
             <android.support.design.widget.FloatingActionButton
                 android:id="@+id/fromLibrary"
@@ -160,7 +161,7 @@
                 android:visibility="visible"
                 map:backgroundTint="@color/darkGrey"
                 map:fabSize="mini"
-                map:srcCompat="@drawable/ic_action_add_photo_library" />
+                map:srcCompat="@drawable/ic_add_photo_library" />
 
             <android.support.design.widget.FloatingActionButton
                 android:id="@+id/takePhoto"
@@ -171,7 +172,7 @@
                 android:visibility="visible"
                 map:backgroundTint="@color/darkGrey"
                 map:fabSize="mini"
-                map:srcCompat="@drawable/ic_action_add_photo_camera" />
+                map:srcCompat="@drawable/ic_add_photo_camera" />
         </LinearLayout>
 
         <LinearLayout

@@ -512,7 +512,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         LinearLayout.LayoutParams commentButtonParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         commentButtonParams.gravity = Gravity.END;
         ImageButton ibComment = new ImageButton(mContext);
-        ibComment.setImageResource(R.drawable.ic_add_note);
+        ibComment.setImageResource(R.drawable.ic_comment);
 //        ibComment.setImageDrawable(getDrawable(R.drawable.ic_action_comment));
         ibComment.setBackground(null);
         ibComment.setLayoutParams(commentButtonParams);

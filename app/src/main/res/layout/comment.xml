@@ -28,9 +28,8 @@
                 android:layout_height="wrap_content"
                 android:adjustViewBounds="false"
                 android:background="@null"
-                android:contentDescription="up arrow"
                 android:scaleType="centerCrop"
-                android:src="@drawable/ic_action_up" />
+                android:src="@drawable/ic_rate_up" />
 
             <TextView
                 android:id="@+id/rating"
@@ -42,11 +41,9 @@
                 android:id="@+id/downArrow"
                 android:layout_width="25dp"
                 android:layout_height="wrap_content"
-                android:layout_below="@+id/rating"
                 android:background="@null"
-                android:contentDescription="up arrow"
                 android:scaleType="centerCrop"
-                android:src="@drawable/ic_action_down" />
+                android:src="@drawable/ic_rate_down" />
         </LinearLayout>
 
         <LinearLayout
