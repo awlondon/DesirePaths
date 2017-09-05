@@ -143,7 +143,7 @@ public class CommentsAdapter extends BaseAdapter {
 
     private void rateChangerClicked(boolean positive, String commentId){
         dh.adjustRating(positive,commentId);
-        ((MapsActivity)mContext).setCommentsAdapter(bundle.getString(CommentsTable.PIEntry_ID));
+        ((MapActivity)mContext).setCommentsAdapter(bundle.getString(CommentsTable.PIEntry_ID));
     }
 
     private String getDuration(String timestamp) {

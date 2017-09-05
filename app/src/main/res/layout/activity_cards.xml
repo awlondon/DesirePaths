@@ -20,8 +20,8 @@
             android:layout_height="50dp"
             android:layout_weight="1"
             android:onClick="noSwipe"
-            app:backgroundTint="@android:color/holo_red_dark"
-            app:srcCompat="@drawable/ic_thumb_up" />
+            android:backgroundTint="@android:color/holo_red_dark"
+            app:srcCompat="@drawable/ic_thumb_down" />
 
         <ImageButton
             android:id="@+id/acceptBtn"
@@ -29,8 +29,8 @@
             android:layout_height="50dp"
             android:layout_weight="1"
             android:onClick="swipe"
-            app:backgroundTint="@android:color/holo_green_light"
-            app:srcCompat="@drawable/ic_thumb_down" />
+            android:backgroundTint="@android:color/holo_green_light"
+            app:srcCompat="@drawable/ic_thumb_up" />
     </LinearLayout>
 
     <com.mindorks.placeholderview.SwipePlaceHolderView

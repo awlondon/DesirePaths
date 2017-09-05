@@ -26,7 +26,7 @@ public class CardsActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.card_activity);
+        setContentView(R.layout.activity_cards);
 
         mSwipeView = (SwipePlaceHolderView)findViewById(R.id.swipeView);
         mContext = getApplicationContext();

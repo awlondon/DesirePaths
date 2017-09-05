@@ -108,7 +108,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import static android.graphics.Color.LTGRAY;
 import static android.widget.LinearLayout.VERTICAL;
 
-public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleMap.OnInfoWindowClickListener, AfterGetAll, PublicInputListFragment.OnListFragmentInteractionListener
+public class MapActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleMap.OnInfoWindowClickListener, AfterGetAll, PublicInputListFragment.OnListFragmentInteractionListener
 {
     static final int delay_getAll = 30;
     private static final String TAG = "tag";
@@ -178,8 +178,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        new PublicInputContent(this);
-        setContentView(R.layout.activity_maps);
+        setContentView(R.layout.activity_map);
         universals = new Universals(this);
         setClickListeners();
         bringUpMap();
@@ -265,7 +264,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 filterMarkers(v);
             }
         });
-        findViewById(R.id.list).setOnClickListener(new View.OnClickListener() {
+        findViewById(R.id.list_map).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 loadListFragment(view);
@@ -410,7 +409,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     public void onInfoWindowClick(Marker marker) {
-        Toast.makeText(MapsActivity.this, marker.getPosition().toString(), Toast.LENGTH_SHORT).show();
+        Toast.makeText(MapActivity.this, marker.getPosition().toString(), Toast.LENGTH_SHORT).show();
     }
 
     boolean openPublicInputView(final MyItem myItem) {
@@ -570,7 +569,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                                             inputMethodManager.toggleSoftInputFromWindow(linearLayout1.getApplicationWindowToken(), InputMethodManager.SHOW_IMPLICIT, 0);
                                         }
                                     }).show();
-//                            Toast.makeText(MapsActivity.this, "A comment must be entered to post", Toast.LENGTH_SHORT).show();
+//                            Toast.makeText(MapActivity.this, "A comment must be entered to post", Toast.LENGTH_SHORT).show();
                             return;
                         }
                         Bundle bundle = new Bundle();
@@ -648,6 +647,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void loadListFragment(View v) {
+        Intent intent = new Intent(this, PublicInputListActivity.class);
+        startActivity(intent);
 //        new PublicInputContent(this);
 //        PublicInputListFragment publicInputListFragment = new PublicInputListFragment();
 //        RelativeLayout topView = (RelativeLayout) findViewById(R.id.topView);
@@ -942,7 +943,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     public void onSuccess(Location location) {
                         if (location != null) {
                             mCurrLatLng = new LatLng(location.getLatitude(), location.getLongitude());
-                            Toast.makeText(MapsActivity.this, "Current location: " + mCurrLatLng.latitude + "," + mCurrLatLng.longitude, Toast.LENGTH_SHORT).show();
+                            Toast.makeText(MapActivity.this, "Current location: " + mCurrLatLng.latitude + "," + mCurrLatLng.longitude, Toast.LENGTH_SHORT).show();
 //                            mMap.addMarker(new MarkerOptions().position(mCurrLatLng).title("Your \'current\' location"));
                             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(mCurrLatLng, 18));
 
@@ -979,7 +980,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     ll = (LinearLayout) findViewById(R.id.llFilter);
                     break;
                 case R.id.addInputToggle:
-                    ll = (LinearLayout) findViewById(R.id.llAddType);
+                    ll = (LinearLayout) findViewById(R.id.addType);
             }
             if (((ToggleButton) v).isChecked()) {
 
@@ -1212,7 +1213,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                                             inputMethodManager.toggleSoftInputFromWindow(cardView.getApplicationWindowToken(), InputMethodManager.SHOW_IMPLICIT, 0);
                                         }
                                     }).show();
-//                            Toast.makeText(MapsActivity.this, "Please complete all the fields", Toast.LENGTH_SHORT).show();
+//                            Toast.makeText(MapActivity.this, "Please complete all the fields", Toast.LENGTH_SHORT).show();
                             return;
                         }
                     } else if (linearLayout.getChildAt(i) instanceof Spinner) {
@@ -1227,7 +1228,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                                         public void onClick(View v) {
                                         }
                                     }).show();
-//                            Toast.makeText(MapsActivity.this, "Please choose an option from the spinner", Toast.LENGTH_SHORT).show();
+//                            Toast.makeText(MapActivity.this, "Please choose an option from the spinner", Toast.LENGTH_SHORT).show();
                             return;
                         }
                     }
@@ -1275,7 +1276,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         chooseLocationExec(false, title, snippet, sentiment);
                     } else {
                         System.out.println("Permission granted");
-                        mFusedLocationClient.getLastLocation().addOnSuccessListener((MapsActivity) mContext, new OnSuccessListener<Location>() {
+                        mFusedLocationClient.getLastLocation().addOnSuccessListener((MapActivity) mContext, new OnSuccessListener<Location>() {
                             @Override
                             public void onSuccess(Location location) {
                                 if (location == null) {
@@ -1298,7 +1299,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                                         bundle.putString(PIEntryTable.USER, Universals.NAME);
                                         bundle.putString(PIEntryTable.TIMESTAMP, new Timestamp(System.currentTimeMillis()).toString());
                                         dh.insert(bundle, new PIEntryTable());
-                                        Toast.makeText(MapsActivity.this, "Content added!", Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(MapActivity.this, "Content added!", Toast.LENGTH_SHORT).show();
                                         addItems(new String[]{null});
                                     }
                                 }
@@ -1392,7 +1393,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         bundle.putString(PIEntryTable.USER, Universals.NAME);
                         bundle.putString(PIEntryTable.TIMESTAMP, new Timestamp(System.currentTimeMillis()).toString());
                         dh.insert(bundle, new PIEntryTable());
-                        Toast.makeText(MapsActivity.this, "Content added!", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MapActivity.this, "Content added!", Toast.LENGTH_SHORT).show();
                         addItems(new String[]{null});
                     }
                 });

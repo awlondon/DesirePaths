@@ -5,8 +5,8 @@
     android:layout_height="wrap_content"
     android:layout_gravity="center"
     android:layout_margin="16dp"
-    android:background="@drawable/rounded_corners"
-    android:padding="8dp">
+    android:background="@android:color/white"
+    android:padding="16dp">
 
     <ImageView
         android:id="@+id/imageView"
