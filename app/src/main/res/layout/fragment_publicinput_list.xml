@@ -8,5 +8,5 @@
     android:layout_height="wrap_content"
     android:background="@color/lightGrey"
     app:layoutManager="LinearLayoutManager"
-    tools:context="com.pdceng.www.desirepaths.PublicInputListFragment"
+    tools:context="com.pdceng.www.desirepaths.abandoned.PublicInputListFragment"
     tools:listitem="@layout/fragment_publicinput" />

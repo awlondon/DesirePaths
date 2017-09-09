@@ -108,7 +108,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import static android.graphics.Color.LTGRAY;
 import static android.widget.LinearLayout.VERTICAL;
 
-public class MapActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleMap.OnInfoWindowClickListener, AfterGetAll, PublicInputListFragment.OnListFragmentInteractionListener
+public class MapActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleMap.OnInfoWindowClickListener, AfterGetAll
 {
     static final int delay_getAll = 30;
     private static final String TAG = "tag";
@@ -146,6 +146,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     Runnable getAllFromSQL;
     float translationY = 0;
     boolean noPicture = false;
+    FragmentManager fragmentManager;
+    FragmentTransaction fragmentTransaction;
     private GoogleMap mMap;
     private ClusterManager<MyItem> mClusterManager;
     private HeatmapTileProvider mProvider;
@@ -171,9 +173,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private Universals universals;
     private int animDur = 200;
     private int ivHeightSetting = 700;
-
-    FragmentManager fragmentManager;
-    FragmentTransaction fragmentTransaction;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -262,12 +261,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             @Override
             public void onClick(View v) {
                 filterMarkers(v);
-            }
-        });
-        findViewById(R.id.list_map).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                loadListFragment(view);
             }
         });
     }
@@ -644,18 +637,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 .setDuration(animDur);
 
         return true;
-    }
-
-    private void loadListFragment(View v) {
-        Intent intent = new Intent(this, PublicInputListActivity.class);
-        startActivity(intent);
-//        new PublicInputContent(this);
-//        PublicInputListFragment publicInputListFragment = new PublicInputListFragment();
-//        RelativeLayout topView = (RelativeLayout) findViewById(R.id.topView);
-//        RecyclerView rv = new RecyclerView(this);
-//        rv.setId(R.id.listView);
-//        getFragmentManager().beginTransaction().add(R.id.piList, PublicInputListFragment.newInstance(null)).commit();
-//        topView.addView(rv);
     }
 
     private ImageView createCloseWindowButton(final View cardView, final RelativeLayout topView) {
@@ -1182,6 +1163,12 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
         cardView.addView(linearLayout);
 
+        cardView.setY(topView.getHeight());
+        cardView.animate()
+                .translationY(0)
+                .setInterpolator(new AccelerateDecelerateInterpolator())
+                .setDuration(animDur);
+
         titleEdit.requestFocus();
         final InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         inputMethodManager.toggleSoftInputFromWindow(linearLayout.getApplicationWindowToken(), InputMethodManager.SHOW_IMPLICIT, 0);
@@ -1470,11 +1457,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         setUpCluster();
     }
 
-    @Override
-    public void onListFragmentInteraction(PublicInput item) {
-
-    }
-
     private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
         ImageView bmImage;
         ProgressBar progressBar;
@@ -1496,7 +1478,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             System.out.println(urlDisplay);
             Bitmap bitmap = null;
             if (!URLUtil.isValidUrl(urlDisplay)) {
-                if (!universals.isBitmapInMemoryCache(urlDisplay)) {
+                if (!Universals.isBitmapInMemoryCache(urlDisplay)) {
                     FTPClient ftpClient = new FTPClient();
                     System.out.println("Starting connection to FTP site!");
                     try {
@@ -1515,14 +1497,14 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                    universals.addBitmapToMemoryCache(urlDisplay, bitmap);
+                    Universals.addBitmapToMemoryCache(urlDisplay, bitmap);
                 }
-                bitmap = universals.getBitmapFromMemoryCache(urlDisplay);
+                bitmap = Universals.getBitmapFromMemoryCache(urlDisplay);
             } else {
-                if (!universals.isBitmapInMemoryCache(urlDisplay)) {
-                    universals.addBitmapToMemoryCache(urlDisplay, universals.getBitmapFromURL(urlDisplay, 200, 200));
+                if (!Universals.isBitmapInMemoryCache(urlDisplay)) {
+                    Universals.addBitmapToMemoryCache(urlDisplay, Universals.getBitmapFromURL(urlDisplay, 200, 200));
                 }
-                bitmap = universals.getBitmapFromMemoryCache(urlDisplay);
+                bitmap = Universals.getBitmapFromMemoryCache(urlDisplay);
             }
             return bitmap;
         }
