@@ -13,6 +13,7 @@ import android.widget.BaseAdapter;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.sql.Timestamp;
 import java.util.List;
@@ -127,6 +128,10 @@ public class CommentsAdapter extends BaseAdapter {
         ibUp.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if (Universals.isAnon) {
+                    Toast.makeText(mContext, "You cannot vote on comments anonymously", Toast.LENGTH_SHORT).show();
+                    return;
+                }
                 rateChangerClicked(true,mData.get(position));
             }
         });
@@ -134,6 +139,10 @@ public class CommentsAdapter extends BaseAdapter {
         ibDown.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if (Universals.isAnon) {
+                    Toast.makeText(mContext, "You cannot vote on comments anonymously", Toast.LENGTH_SHORT).show();
+                    return;
+                }
                 rateChangerClicked(false,mData.get(position));
             }
         });
@@ -143,7 +152,7 @@ public class CommentsAdapter extends BaseAdapter {
 
     private void rateChangerClicked(boolean positive, String commentId){
         dh.adjustRating(positive,commentId);
-        ((MapActivity)mContext).setCommentsAdapter(bundle.getString(CommentsTable.PIEntry_ID));
+        ((CommentsAdapterInterface) mContext).setCommentsAdapter(bundle.getString(CommentsTable.PIEntry_ID));
     }
 
     private String getDuration(String timestamp) {
@@ -160,7 +169,7 @@ public class CommentsAdapter extends BaseAdapter {
 
         //A timestamp is a java class that stores detailed time information.
         //'postedTime' is a Timestamp value of the date argument to be compared.
-        //'now' is a Timstamp create from the system's current time.
+        //'now' is a Timestamp created from the system's current time.
 
         Timestamp firstTime = new Timestamp(Long.valueOf(timestamp));
         Timestamp lastTime = new Timestamp(System.currentTimeMillis());
@@ -168,6 +177,9 @@ public class CommentsAdapter extends BaseAdapter {
         long compareToMillis = TimeUnit.MILLISECONDS.toMillis(lastTime.getTime() - firstTime.getTime());
         long compareToDays = TimeUnit.MILLISECONDS.toDays(lastTime.getTime() - firstTime.getTime());
         String result = null;
+
+//        Log.d("compareToMillis", String.valueOf(compareToMillis));
+//        Log.d("compareToDays", String.valueOf(compareToDays));
 
         //This if/else routine finds the most appropriate description of the time between the date argument and now.
         int value = 0;
@@ -188,15 +200,15 @@ public class CommentsAdapter extends BaseAdapter {
             if (value==1) result = value + " day";
             else result = value + " days";
         } else if (compareToDays > WEEK && compareToDays < MONTH) {
-            value = (int) (compareToMillis / WEEK);
+            value = (int) (compareToDays / WEEK);
             if (value==1) result = value + " week";
             else result = value + " weeks";
         } else if (compareToDays > MONTH && compareToDays < YEAR) {
-            value = (int) (compareToMillis / MONTH);
+            value = (int) (compareToDays / MONTH);
             if (value==1) result = value + " month";
             else result = value + " months";
         } else if (compareToDays > YEAR) {
-            value = (int) (compareToMillis / YEAR);
+            value = (int) (compareToDays / YEAR);
             if (value==1) result = value + " year";
             else result = value + " years";
         }
@@ -230,11 +242,15 @@ public class CommentsAdapter extends BaseAdapter {
             String urlDisplay = urls[0];
             System.out.println(urlDisplay);
             Bitmap bitmap = null;
-            if (!universals.isBitmapInMemoryCache(urlDisplay)) {
-                universals.addBitmapToMemoryCache(urlDisplay, universals.getBitmapFromURL(urlDisplay, 50, 50));
+            if (urlDisplay == null) {
+                return null;
+            } else {
+                if (!Universals.isBitmapInMemoryCache(urlDisplay)) {
+                    Universals.addBitmapToMemoryCache(urlDisplay, Universals.getBitmapFromURL(urlDisplay, 50, 50));
+                }
+                bitmap = Universals.getBitmapFromMemoryCache(urlDisplay);
+                return bitmap;
             }
-            bitmap = universals.getBitmapFromMemoryCache(urlDisplay);
-            return bitmap;
         }
 
         protected void onPostExecute(Bitmap result) {

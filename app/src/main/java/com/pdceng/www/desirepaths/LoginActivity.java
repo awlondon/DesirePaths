@@ -1,5 +1,6 @@
 package com.pdceng.www.desirepaths;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -9,6 +10,7 @@ import android.support.v4.app.FragmentActivity;
 import android.util.Base64;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
 
 import com.facebook.AccessToken;
@@ -44,8 +46,10 @@ public class LoginActivity extends FragmentActivity implements AfterGetAll {
     String name, social_media_id, photo_url;
     Bundle parameters;
     LoginButton login_button;
+    Button bAnon;
     DatabaseHelper dh = new DatabaseHelper(this);
     GoogleApiClient mGoogleApiClient;
+    Context mContext = this;
     private CallbackManager callbackManager;
 
     @Override
@@ -53,6 +57,15 @@ public class LoginActivity extends FragmentActivity implements AfterGetAll {
         super.onCreate(savedInstanceState);
         dh.getAllFromSQL(this);
         setContentView(R.layout.splash);
+        bAnon = (Button) findViewById(R.id.bAnon);
+        bAnon.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Universals.isAnon = true;
+                Intent intent = new Intent(mContext, MapActivity.class);
+                startActivity(intent);
+            }
+        });
         try {
             PackageInfo info = getPackageManager().getPackageInfo(
                     "com.pdceng.www.desirepaths",
@@ -167,9 +180,9 @@ public class LoginActivity extends FragmentActivity implements AfterGetAll {
             photo_url = acct.getPhotoUrl().toString();
             checkUser();
         } else {
-            Toast.makeText(this, "Could not sign-in!", Toast.LENGTH_SHORT).show();
-            Intent intent = new Intent(this,MapActivity.class);
-            startActivity(intent);
+            Toast.makeText(this, "Could not sign-in! Try again, or enter anonymously", Toast.LENGTH_SHORT).show();
+//            Intent intent = new Intent(this,MapActivity.class);
+//            startActivity(intent);
         }
     }
 
@@ -190,6 +203,7 @@ public class LoginActivity extends FragmentActivity implements AfterGetAll {
             Universals.NAME = name;
         }
 
+        Universals.isAnon = false;
         Intent intent = new Intent(this,MapActivity.class);
         startActivity(intent);
         return true;

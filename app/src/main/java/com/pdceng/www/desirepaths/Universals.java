@@ -17,9 +17,13 @@ import java.net.UnknownHostException;
  */
 
 public class Universals {
+    static boolean isAnon = false;
     static String SOCIAL_MEDIA_ID;
     static String NAME;
     static boolean SYNCHRONIZING = false;
+    static Bitmap bitmapBeingProcessed;
+    static boolean chooseLocation = false;
+    static MapActivity mapActivity;
     private static LruCache<String, Bitmap> bitmapMemoryCache;
     private static Universals instance;
     Context mContext;
@@ -142,6 +146,26 @@ public class Universals {
     }
 
     static boolean isBitmapInMemoryCache(String key) {
-        return bitmapMemoryCache.get(key) != null;
+        if (key == null) {
+            return false;
+        } else {
+            return bitmapMemoryCache.get(key) != null;
+        }
+    }
+
+    static void sendBitmapForProcessing(Bitmap bitmap) {
+        bitmapBeingProcessed = bitmap;
+    }
+
+    static void nullifyBitmapBeingProcessed() {
+        bitmapBeingProcessed = null;
+    }
+
+    static void setChooseLocation(boolean bool) {
+        chooseLocation = bool;
+    }
+
+    static void defaultChooseLocation() {
+        chooseLocation = false;
     }
 }

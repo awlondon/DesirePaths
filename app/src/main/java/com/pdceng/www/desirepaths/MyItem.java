@@ -14,6 +14,7 @@ import java.sql.Timestamp;
  */
 
 public class MyItem implements ClusterItem {
+    private Bundle mBundle;
     private LatLng mPosition;
     private String mTitle;
     private String mSnippet;
@@ -25,6 +26,7 @@ public class MyItem implements ClusterItem {
     private Integer mId;
 
     public MyItem(Bundle bundle) {
+        mBundle = bundle;
         mPosition = new LatLng(
                 Float.valueOf(bundle.getString(PIEntryTable.LATITUDE)),
                 Float.valueOf(bundle.getString(PIEntryTable.LONGITUDE)));
@@ -112,5 +114,9 @@ public class MyItem implements ClusterItem {
 
     public Integer getId() {
         return mId;
+    }
+
+    public Bundle getBundle() {
+        return mBundle;
     }
 }
