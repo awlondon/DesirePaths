@@ -20,14 +20,6 @@
             android:layout_alignParentTop="true"
             tools:context="com.pdceng.www.desirepaths.MapActivity" />
 
-        <!--<fragment-->
-            <!--android:id="@+id/piList"-->
-        <!--android:name="abandoned.PublicInputListFragment"-->
-        <!--class="abandoned.PublicInputListFragment"-->
-            <!--android:layout_width="match_parent"-->
-            <!--android:layout_height="match_parent"-->
-        <!--android:layout_above="@+id/menu" />-->
-
         <android.support.design.widget.FloatingActionButton
             android:id="@+id/myLocation"
             android:layout_width="50dp"
@@ -57,22 +49,9 @@
             map:fabSize="mini"
             map:srcCompat="@drawable/ic_return" />
 
-        <TextView
-            android:id="@+id/hint"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignBottom="@+id/prevMap"
-            android:layout_marginBottom="11dp"
-            android:layout_marginStart="12dp"
-            android:layout_toEndOf="@+id/prevMap"
-            android:background="@drawable/rounded_corners_prime"
-            android:padding="5dp"
-            android:text="Previous map extent"
-            android:textColor="@color/white" />
-
         <include
             android:id="@+id/menu"
-            layout="@layout/menu"
+            layout="@menu/bottom_menu"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true" />
@@ -84,6 +63,24 @@
             android:layout_height="wrap_content"
             android:layout_above="@+id/menu"
             android:layout_margin="10dp" />
+
+        <ImageView
+            android:id="@+id/addArrow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_above="@+id/menu"
+            android:layout_marginStart="10dp"
+            android:visibility="invisible"
+            map:srcCompat="@drawable/arrow_down" />
+
+        <ImageView
+            android:id="@+id/thumbsArrow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_above="@+id/menu"
+            android:layout_marginStart="75dp"
+            android:visibility="invisible"
+            map:srcCompat="@drawable/arrow_down" />
 
         <LinearLayout
             android:id="@+id/llFilter"
@@ -122,5 +119,17 @@
         </LinearLayout>
 
     </RelativeLayout>
+
+    <ImageView
+        android:id="@+id/arrow"
+        android:layout_width="200dp"
+        android:layout_height="100dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginStart="68dp"
+        android:layout_marginTop="17dp"
+        android:scaleType="fitXY"
+        android:visibility="invisible"
+        map:srcCompat="@drawable/arrow_curved" />
 
 </RelativeLayout>

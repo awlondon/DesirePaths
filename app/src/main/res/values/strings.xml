@@ -14,4 +14,10 @@
     <string name="google_cloud_messaging_sender_id">107255467560</string>
     <string name="google_sign_in_sha_1">4F:53:F6:F1:FE:03:BC:60:14:AC:00:79:0D:23:09:FC:AC:2B:06:24</string>
     <string name="OK">OK</string>
+    <string name="title_activity_nav_drawer">NavDrawerActivity</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="action_settings">Settings</string>
 </resources>

@@ -55,13 +55,14 @@ public class LoginActivity extends FragmentActivity implements AfterGetAll {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        dh.getAllFromSQL(this);
         setContentView(R.layout.splash);
+        dh.getAllFromSQL(this);
         bAnon = (Button) findViewById(R.id.bAnon);
         bAnon.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Universals.isAnon = true;
+//                Universals.isAnon = true;
+                dh.setAnonymousUser();
                 Intent intent = new Intent(mContext, MapActivity.class);
                 startActivity(intent);
             }
@@ -190,7 +191,7 @@ public class LoginActivity extends FragmentActivity implements AfterGetAll {
         if (dh.isUser(social_media_id)) {
             System.out.println("User is found!");
             Universals.SOCIAL_MEDIA_ID = social_media_id;
-            Universals.NAME = name;
+            Universals.USER_NAME = name;
         } else {
             Timestamp timestamp = new Timestamp(System.currentTimeMillis());
             Bundle bundle = new Bundle();
@@ -200,7 +201,7 @@ public class LoginActivity extends FragmentActivity implements AfterGetAll {
             bundle.putString(UserTable.REGISTERED_TIMESTAMP, timestamp.toString());
             dh.insert(bundle, new UserTable());
             Universals.SOCIAL_MEDIA_ID = social_media_id;
-            Universals.NAME = name;
+            Universals.USER_NAME = name;
         }
 
         Universals.isAnon = false;
@@ -216,6 +217,6 @@ public class LoginActivity extends FragmentActivity implements AfterGetAll {
 
     @Override
     public void afterGetAll() {
-        Toast.makeText(this, "Data loaded successfully", Toast.LENGTH_SHORT).show();
+//        Toast.makeText(this, "Data loaded successfully", Toast.LENGTH_SHORT).show();
     }
 }

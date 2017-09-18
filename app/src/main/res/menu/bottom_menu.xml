@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/menu"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_alignParentBottom="true"
+    android:background="@color/cardview_dark_background"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginTop="@dimen/menu_margin_top"
+        android:background="@color/colorPrimaryDark"
+        android:orientation="horizontal"
+        android:padding="10dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@color/colorPrimaryDarkest"
+            android:orientation="horizontal">
+
+            <ToggleButton
+                android:id="@+id/addInputToggle"
+                style="@style/Widget.AppCompat.DrawerArrowToggle"
+                android:layout_width="@dimen/menu_button_width"
+                android:layout_height="@dimen/menu_button_height"
+                android:layout_marginEnd="@dimen/menu_button_margin_end"
+                android:layout_toEndOf="@+id/bCards"
+                android:layout_weight="1"
+                android:background="@color/colorPrimaryDark"
+                android:drawableTop="@drawable/ic_add_location"
+                android:textOff=" "
+                android:textOn=" " />
+
+            <ImageButton
+                android:id="@+id/bCards"
+                style="@android:style/Widget.Material.ImageButton"
+                android:layout_width="@dimen/menu_button_width"
+                android:layout_height="@dimen/menu_button_height"
+                android:layout_marginEnd="@dimen/menu_button_margin_end"
+                android:layout_weight="1"
+                android:background="@color/colorPrimaryDark"
+                android:src="@drawable/ic_thumbs_up_down" />
+
+            <ToggleButton
+                android:id="@+id/filterToggle"
+                style="@style/Widget.AppCompat.DrawerArrowToggle"
+                android:layout_width="@dimen/menu_button_width"
+                android:layout_height="@dimen/menu_button_height"
+                android:layout_marginEnd="@dimen/menu_button_margin_end"
+                android:layout_weight="1"
+                android:background="@color/colorPrimaryDark"
+                android:drawableTop="@drawable/ic_action_filter"
+                android:textOff=" "
+                android:textOn=" " />
+
+            <ImageButton
+                android:id="@+id/zoomOut"
+                android:layout_width="@dimen/menu_button_width"
+                android:layout_height="@dimen/menu_button_height"
+                android:layout_marginEnd="@dimen/menu_button_margin_end"
+                android:layout_weight="1"
+                android:background="@color/colorPrimaryDark"
+                android:clickable="true"
+                android:elevation="0dp"
+                android:src="@drawable/ic_zoom_out" />
+
+            <ImageButton
+                android:id="@+id/zoomIn"
+                android:layout_width="@dimen/menu_button_width"
+                android:layout_height="@dimen/menu_button_height"
+                android:layout_marginEnd="@dimen/menu_button_margin_end"
+                android:layout_weight="1"
+                android:background="@color/colorPrimaryDark"
+                android:clickable="true"
+                android:elevation="0dp"
+                android:src="@drawable/ic_zoom_in" />
+
+            <ImageButton android:id="@+id/help" android:layout_width="@dimen/menu_button_width"
+                android:layout_height="@dimen/menu_button_height" android:layout_weight="1"
+                android:background="@color/colorPrimaryDark" android:clickable="true"
+                android:elevation="0dp" android:src="@android:drawable/ic_menu_help" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout>

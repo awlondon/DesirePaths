@@ -73,7 +73,11 @@
             android:theme="@style/AppTheme" />
         <activity android:name=".TestActivity" />
         <activity android:name=".PublicInputViewActivity" />
-        <activity android:name=".PublicInputAddActivity"></activity>
+        <activity android:name=".PublicInputAddActivity" />
+        <activity
+            android:name=".NavDrawerActivity"
+            android:label="@string/title_activity_nav_drawer"
+            android:theme="@style/AppTheme"></activity>
     </application>
 
 </manifest>

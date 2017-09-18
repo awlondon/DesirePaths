@@ -17,9 +17,11 @@ import java.net.UnknownHostException;
  */
 
 public class Universals {
-    static boolean isAnon = false;
+    static boolean isAnon;
+    static boolean prevMapTutorialWasShown;
     static String SOCIAL_MEDIA_ID;
-    static String NAME;
+    static String USER_NAME;
+    static String PROJECT_NAME;
     static boolean SYNCHRONIZING = false;
     static Bitmap bitmapBeingProcessed;
     static boolean chooseLocation = false;

@@ -213,7 +213,7 @@ public class PublicInputAddActivity extends AppCompatActivity implements AfterGe
                                         bundle.putString(PIEntryTable.SENTIMENT, sentiment);
                                         bundle.putString(PIEntryTable.TITLE, title);
                                         bundle.putString(PIEntryTable.SNIPPET, snippet);
-                                        bundle.putString(PIEntryTable.USER, Universals.NAME);
+                                        bundle.putString(PIEntryTable.USER, Universals.USER_NAME);
                                         bundle.putString(PIEntryTable.TIMESTAMP, new Timestamp(System.currentTimeMillis()).toString());
                                         dh.insert(bundle, new PIEntryTable());
                                         Toast.makeText(mContext, "Content added!", Toast.LENGTH_SHORT).show();
@@ -241,6 +241,7 @@ public class PublicInputAddActivity extends AppCompatActivity implements AfterGe
             @Override
             public void onClick(View v) {
                 dh.getAllFromSQL((AfterGetAll) mContext);
+                Toast.makeText(mContext, "Public input activity was cancelled", Toast.LENGTH_SHORT).show();
                 finish();
             }
         });

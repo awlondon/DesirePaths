@@ -8,9 +8,9 @@ import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.provider.ContactsContract;
 import android.text.TextUtils;
 import android.util.Log;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -63,6 +63,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL(createTableString(new PIEntryTable()));
         db.execSQL(createTableString(new CommentsTable()));
         db.execSQL(createTableString(new UserTable()));
+        db.execSQL(createTableString(new AnonymousTable()));
+        db.execSQL(createTableString(new ProjectTable()));
     }
 
     @Override
@@ -96,6 +98,45 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return result;
     }
 
+    synchronized void setAnonymousUser() {
+        SQLiteDatabase db = getWritableDatabase();
+        Table anonymousTable = new AnonymousTable();
+        String thisAnonymousUser;
+        Cursor c = db.query(anonymousTable.tableName(), null, null, null, null, null, null);
+        //Checking if already logged in as anonymous
+        if (c != null && c.moveToFirst()) {
+            thisAnonymousUser = c.getString(c.getColumnIndexOrThrow(AnonymousTable.ANONYMOUS_USER));
+        } else {
+            //Finds next anonymous user to add and adds user
+            Table userTable = new UserTable();
+            c = db.query(userTable.tableName(), null, null, null, null, null, null);
+            String anonymousString = "Anonymous";
+            List<String> anonymousList = new ArrayList<>();
+            if (c != null && c.moveToFirst()) {
+                do {
+                    String username = c.getString(c.getColumnIndexOrThrow(UserTable.SOCIAL_MEDIA_ID));
+                    if (username.contains(anonymousString)) anonymousList.add(username);
+                } while (c.moveToNext());
+            }
+            int anonNum = 1;
+            while (anonymousList.contains(anonymousString + String.valueOf(anonNum))) anonNum++;
+            String addAnonymousString = anonymousString + String.valueOf(anonNum);
+            ContentValues cv = new ContentValues();
+            cv.put(AnonymousTable.ANONYMOUS_USER, addAnonymousString);
+            db.insert(anonymousTable.tableName(), anonymousTable.nullColumnHack(), cv);
+            Bundle bundle = new Bundle();
+            for (String key :
+                    cv.keySet()) {
+                bundle.putString(UserTable.SOCIAL_MEDIA_ID, (String) cv.get(key));
+                bundle.putString(UserTable.NAME, "Anonymous");
+            }
+            insert(bundle, userTable);
+            thisAnonymousUser = addAnonymousString;
+        }
+        Universals.SOCIAL_MEDIA_ID = thisAnonymousUser;
+        Universals.USER_NAME = "Anonymous User";
+    }
+
     synchronized Bundle getRow(Table table, String col, String... args) {
         SQLiteDatabase db = getReadableDatabase();
 
@@ -113,7 +154,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     synchronized void getAllFromSQL(AfterGetAll afterGetAll) {
-        final Table[] tables = new Table[]{new PIEntryTable(), new CommentsTable(), new UserTable()};
+        final Table[] tables = new Table[]{new PIEntryTable(), new CommentsTable(), new UserTable(), new ProjectTable()};
 
 //        Toast.makeText(mContext, "Synchronizing...", Toast.LENGTH_SHORT).show();
 
@@ -121,6 +162,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             String sql = querySQLString(table.tableName(), null, null);
             getJSONFromUrl(sql, afterGetAll);
         }
+        Toast.makeText(mContext, "All data is loaded", Toast.LENGTH_SHORT).show();
     }
 
     synchronized Bundle[] getAllInTable(Table table) {
@@ -146,7 +188,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         Bundle[] bundles = getAllInTable(new PIEntryTable());
         ArrayList<PublicInput> resultArrayList = new ArrayList<>();
 
-        int i = 0;
         for (Bundle bundle : bundles) {
             PublicInput publicInput = new PublicInput(mContext);
             publicInput.setID(String.valueOf(bundle.getInt(PIEntryTable.ID)));
@@ -159,7 +200,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             publicInput.setUrl(bundle.getString(PIEntryTable.URL));
             publicInput.setUser(bundle.getString(PIEntryTable.USER));
             resultArrayList.add(publicInput);
-            i++;
         }
 
         String[] userPIRatings = getUserPIRatings();
@@ -179,8 +219,20 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return resultArrayList.toArray(new PublicInput[resultArrayList.size()]);
     }
 
+    synchronized String[] getAllProjectNames() {
+        Bundle[] bundles = getAllInTable(new ProjectTable());
+        ArrayList<String> resultArrayList = new ArrayList<>();
+        for (Bundle bundle : bundles) {
+            System.out.println(bundle.toString());
+            String string = bundle.getString(ProjectTable.NAME);
+            System.out.println("project: " + string);
+            resultArrayList.add(string);
+        }
+        return resultArrayList.toArray(new String[resultArrayList.size()]);
+    }
+
     private synchronized String[] getUserPIRatings() {
-        if (Universals.NAME != null) {
+        if (Universals.USER_NAME != null) {
             Bundle user = getRow(new UserTable(), UserTable.SOCIAL_MEDIA_ID, Universals.SOCIAL_MEDIA_ID);
 
             String agree = user.getString(UserTable.PI_AGREE);
@@ -262,7 +314,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     synchronized int checkRatingGiven(String commentId) {
-        if (Universals.NAME!=null) {
+        if (Universals.USER_NAME != null) {
             Bundle bundle = getRow(new UserTable(), UserTable.SOCIAL_MEDIA_ID, Universals.SOCIAL_MEDIA_ID);
 
             String prs = bundle.getString(UserTable.POSITIVE_RATINGS);

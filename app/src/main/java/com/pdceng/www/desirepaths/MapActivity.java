@@ -31,7 +31,10 @@ import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AccelerateInterpolator;
+import android.view.animation.Animation;
 import android.view.animation.DecelerateInterpolator;
+import android.view.animation.LinearInterpolator;
+import android.view.animation.TranslateAnimation;
 import android.webkit.URLUtil;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -171,6 +174,23 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         setClickListeners();
         bringUpMap();
         checkPermission();
+        chooseProject();
+    }
+
+    private void chooseProject() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Choose a project");
+        final String[] projects = dh.getAllProjectNames();
+//        builder.setCancelable(false);
+        builder.setItems(projects, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                Universals.PROJECT_NAME = projects[which];
+                dialog.dismiss();
+            }
+        });
+        builder.create();
+        builder.show();
     }
 
     private void setClickListeners() {
@@ -257,11 +277,17 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 filterMarkers(v);
             }
         });
+        findViewById(R.id.help).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                runTutorial();
+            }
+        });
     }
 
     private void bringUpMap() {
-        if(Universals.NAME!=null){
-            Toast.makeText(mContext, "Welcome, " + Universals.NAME.split(" ")[0], Toast.LENGTH_SHORT).show();
+        if (Universals.USER_NAME != null) {
+            Toast.makeText(mContext, "Welcome, " + Universals.USER_NAME.split(" ")[0], Toast.LENGTH_SHORT).show();
         }
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
@@ -382,6 +408,10 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
         Universals.mapActivity = this;
 
+//        runTutorial();
+    }
+
+    private void runTutorial() {
         final String title = "Welcome, Airport Way Stakeholders!";
         if (Universals.isAnon) {
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -395,30 +425,48 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             });
             builder.show();
         } else {
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            final TranslateAnimation mAnimation = new TranslateAnimation(0, 0, 0, 30);
+            mAnimation.setDuration(500);
+            mAnimation.setRepeatCount(-1);
+            mAnimation.setRepeatMode(Animation.REVERSE);
+            mAnimation.setInterpolator(new LinearInterpolator());
 
-            builder.setTitle(title + " (1/3)");
-            builder.setMessage("Start adding public input along Airport Way (the blue line) using a photo and/or comment.");
+            final View addArrow = findViewById(R.id.addArrow);
+            final View thumbsArrow = findViewById(R.id.thumbsArrow);
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle(title);
+            builder.setMessage("Add public input using a photo and/or comment." + " (1/3)");
+            addArrow.setVisibility(View.VISIBLE);
+            addArrow.setAnimation(mAnimation);
+            builder.setCancelable(false);
             builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     dialog.dismiss();
+                    addArrow.setAnimation(null);
+                    addArrow.setVisibility(View.GONE);
                     AlertDialog.Builder builder1 = new AlertDialog.Builder(mContext);
-                    builder1.setTitle(title + " (2/3)");
-                    builder1.setMessage("Click on the map markers to view others' comments and interact with them.");
+                    builder1.setCancelable(false);
+                    builder1.setTitle(title);
+                    builder1.setMessage("Click on the map markers to view others' comments and interact with them." + " (2/3)");
                     builder1.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             dialog.dismiss();
                             AlertDialog.Builder builder2 = new AlertDialog.Builder(mContext);
-                            builder2.setTitle(title + " (3/3)");
-                            builder2.setMessage("Click the 'thumbs' button to agree or disagree with comments. Press OK to get started!");
+                            builder2.setCancelable(false);
+                            builder2.setTitle(title);
+                            builder2.setMessage("Click the 'thumbs' button to agree or disagree with comments. Press OK to get started!" + " (3/3)");
+                            thumbsArrow.setVisibility(View.VISIBLE);
+                            thumbsArrow.setAnimation(mAnimation);
                             builder2.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
                                 @Override
                                 public void onClick(DialogInterface dialog, int which) {
-                                    ToggleButton tb = (ToggleButton) findViewById(R.id.addInputToggle);
-                                    tb.setChecked(true);
-                                    toggleOptions(tb);
+//                                    ToggleButton tb = (ToggleButton) findViewById(R.id.addInputToggle);
+//                                    tb.setChecked(true);
+//                                    toggleOptions(tb);
+                                    thumbsArrow.setAnimation(null);
+                                    thumbsArrow.setVisibility(View.INVISIBLE);
                                     dialog.dismiss();
                                 }
                             });
@@ -721,8 +769,34 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     }
 
     private void toggleReturnFab() {
-        if (hasPreviousPosition()) prevMapFab.setVisibility(View.VISIBLE);
-        else prevMapFab.setVisibility(View.INVISIBLE);
+        if (hasPreviousPosition()) {
+            prevMapFab.setVisibility(View.VISIBLE);
+            if (!Universals.prevMapTutorialWasShown) {
+                final View arrow = findViewById(R.id.arrow);
+                arrow.setVisibility(View.VISIBLE);
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setMessage("Click the blue button to go back to the last map extent.");
+                builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                    @Override
+                    public void onDismiss(DialogInterface dialog) {
+                        arrow.setVisibility(View.GONE);
+                        Universals.prevMapTutorialWasShown = true;
+                        dialog.dismiss();
+                    }
+                });
+                builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        arrow.setVisibility(View.GONE);
+                        Universals.prevMapTutorialWasShown = true;
+                        dialog.dismiss();
+                    }
+                });
+                builder.show();
+            }
+        } else {
+            prevMapFab.setVisibility(View.INVISIBLE);
+        }
     }
 
     private boolean hasPreviousPosition() {
@@ -892,14 +966,15 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     void chooseLocationExec(boolean knownLoc, final String title, final String snippet, final String sentiment, final Bitmap finalImageBitmap, final PublicInputAddActivity.SendImageFTP finalSendImageFTP, Activity activityRef) {
         System.out.println("starting choose location function...");
         activityRef.finish();
-        Snackbar.make(findViewById(android.R.id.content),
-                "Click map or drag marker to position, then click \'OK\'",
+        String message = "Touch map to move marker or press and hold-down on marker to drag into position, then click \'OK\'";
+        /*Snackbar.make(findViewById(android.R.id.content),message,
                 Snackbar.LENGTH_INDEFINITE).setAction("THANKS, GOT IT",
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                     }
-                }).show();
+                }).show();*/
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show();
 //                Toast.makeText(mContext, "Drag marker to desired position; click \'OK\'", Toast.LENGTH_LONG).show();
         final Button okButton = new Button(mContext);
         okButton.setText(R.string.OK);
@@ -972,7 +1047,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 bundle.putString(PIEntryTable.SENTIMENT, sentiment);
                 bundle.putString(PIEntryTable.TITLE, title);
                 bundle.putString(PIEntryTable.SNIPPET, snippet);
-                bundle.putString(PIEntryTable.USER, Universals.NAME);
+                bundle.putString(PIEntryTable.USER, Universals.USER_NAME);
                 bundle.putString(PIEntryTable.TIMESTAMP, new Timestamp(System.currentTimeMillis()).toString());
                 dh.insert(bundle, new PIEntryTable());
                 Toast.makeText(mContext, "Content added!", Toast.LENGTH_SHORT).show();

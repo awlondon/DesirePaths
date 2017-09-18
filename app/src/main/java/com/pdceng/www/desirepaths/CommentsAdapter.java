@@ -9,6 +9,7 @@ import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.URLUtil;
 import android.widget.BaseAdapter;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -242,7 +243,7 @@ public class CommentsAdapter extends BaseAdapter {
             String urlDisplay = urls[0];
             System.out.println(urlDisplay);
             Bitmap bitmap = null;
-            if (urlDisplay == null) {
+            if (urlDisplay == null || !URLUtil.isValidUrl(urlDisplay)) {
                 return null;
             } else {
                 if (!Universals.isBitmapInMemoryCache(urlDisplay)) {
