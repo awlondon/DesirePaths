@@ -12,6 +12,7 @@ import android.os.Environment;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.CardView;
+import android.text.InputFilter;
 import android.text.InputType;
 import android.text.SpannableString;
 import android.text.style.StyleSpan;
@@ -43,6 +44,7 @@ import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.List;
 
+import static android.R.attr.maxLength;
 import static android.graphics.Color.LTGRAY;
 import static android.view.View.OVER_SCROLL_ALWAYS;
 import static android.widget.LinearLayout.VERTICAL;
@@ -55,6 +57,9 @@ public class PublicInputViewActivity extends AppCompatActivity implements AfterG
     private DatabaseHelper dh = new DatabaseHelper(this);
     private CommentsAdapter adapter;
     private Context mContext = this;
+    private ImageButton ibRatingUp;
+    private ImageButton ibRatingDown;
+    private TextView tvRating;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,10 +76,9 @@ public class PublicInputViewActivity extends AppCompatActivity implements AfterG
 
         //START: set CardView layout
         CardView.LayoutParams params = new CardView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-//        params.setMargins(30,30,30,200);
-//        cardView.setPadding(0, 200, 0, 200);
         cardView.setLayoutParams(params);
         cardView.setCardBackgroundColor(getColor(R.color.white));
+        cardView.setBackgroundColor(getColor(R.color.white));
         cardView.bringToFront();
         cardView.setRadius(0);
         cardView.setClickable(true);
@@ -95,6 +99,8 @@ public class PublicInputViewActivity extends AppCompatActivity implements AfterG
         LinearLayout entryLayout = new LinearLayout(this);
         entryLayout.setLayoutParams(llParams);
         entryLayout.setOrientation(VERTICAL);
+        entryLayout.setPadding(margin * 2, margin * 2, margin, 0);
+        entryLayout.setBackground(getDrawable(R.drawable.pi_gradient));
         //END: create holder layouts
 
         //START: create ImageView
@@ -113,33 +119,44 @@ public class PublicInputViewActivity extends AppCompatActivity implements AfterG
 
         //START: create TextViews
         LinearLayout.LayoutParams snippetParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        snippetParams.setMargins(margin * 2, 0, 0, 0);
 
         LinearLayout.LayoutParams titleParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        titleParams.setMargins(margin * 2, 0, 0, 0);
 
-        TextView tvUserDate = new TextView(this);
+        TextView tvUser = new TextView(this);
         TextView tvTitle = new TextView(this);
         TextView tvSnippet = new TextView(this);
 
-        LinearLayout.LayoutParams userDateParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        userDateParams.gravity = Gravity.END;
-        userDateParams.setMargins(0, margin, margin, 0);
+        LinearLayout.LayoutParams userParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        userParams.gravity = Gravity.END;
+        userParams.setMargins(margin, margin, margin, margin);
 
-        tvUserDate.setLayoutParams(userDateParams);
+        tvUser.setLayoutParams(userParams);
         tvTitle.setLayoutParams(titleParams);
         tvSnippet.setLayoutParams(snippetParams);
 
-        final String addedBy = "Added by: ";
-        SpannableString italicUserDate = new SpannableString(addedBy + myItem.getUser() + " on " + formatDateForTimestamp(myItem.getTimestamp()));
-        italicUserDate.setSpan(new StyleSpan(Typeface.BOLD_ITALIC), addedBy.length(), addedBy.length() + myItem.getUser().length(), 0);
+        Bundle userBundle = dh.getRow(new UserTable(), UserTable.SOCIAL_MEDIA_ID, myItem.getUser());
+        String user = userBundle.getString(UserTable.NAME);
+        SpannableString italicUser = new SpannableString(user);
+        italicUser.setSpan(new StyleSpan(Typeface.BOLD_ITALIC), 0, italicUser.length(), 0);
 
         SpannableString boldTitle = new SpannableString(myItem.getTitle());
         boldTitle.setSpan(new StyleSpan(Typeface.BOLD), 0, myItem.getTitle().length(), 0);
 
-        tvUserDate.setText(italicUserDate);
+        LinearLayout llProfile = new LinearLayout(this);
+        llProfile.setOrientation(LinearLayout.HORIZONTAL);
+
+        ImageView ivProfile = new ImageView(this);
+        ivProfile.setLayoutParams(new LinearLayout.LayoutParams(100, 100));
+        new DownloadImageTask(ivProfile, null).execute(userBundle.getString(UserTable.PHOTO_URL));
+
+        tvUser.setText(italicUser);
         tvTitle.setText(boldTitle);
         tvSnippet.setText(myItem.getSnippet());
+
+        TextView tvDate = new TextView(this);
+        tvDate.setGravity(Gravity.END);
+        tvDate.setText(Universals.getDuration(String.valueOf(myItem.getTimestamp().getTime())));
+        tvDate.setTextSize(12);
         //END: create TextViews
 
         //Close window 'button'
@@ -154,7 +171,10 @@ public class PublicInputViewActivity extends AppCompatActivity implements AfterG
 
         linearLayout.addView(entryLayout);
 
-        entryLayout.addView(tvUserDate);
+        entryLayout.addView(tvDate);
+        entryLayout.addView(llProfile);
+        llProfile.addView(ivProfile);
+        llProfile.addView(tvUser);
         entryLayout.addView(tvTitle);
         entryLayout.addView(tvSnippet);
         //END: add views to layouts
@@ -164,7 +184,6 @@ public class PublicInputViewActivity extends AppCompatActivity implements AfterG
         commentButtonParams.gravity = Gravity.END;
         ImageButton ibComment = new ImageButton(this);
         ibComment.setImageResource(R.drawable.ic_comment);
-//        ibComment.setImageDrawable(getDrawable(R.drawable.ic_action_comment));
         ibComment.setBackground(null);
         ibComment.setLayoutParams(commentButtonParams);
         ibComment.setOnClickListener(new View.OnClickListener() {
@@ -186,14 +205,17 @@ public class PublicInputViewActivity extends AppCompatActivity implements AfterG
 
                 final EditText etComment = new EditText(mContext);
                 etComment.setHint("Add a comment...");
+                etComment.setInputType(InputType.TYPE_CLASS_TEXT |
+                        InputType.TYPE_TEXT_FLAG_MULTI_LINE |
+                        InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
+                InputFilter[] fArray = new InputFilter[1];
+                fArray[0] = new InputFilter.LengthFilter(maxLength);
+                etComment.setFilters(fArray);
                 etComment.setBackgroundColor(getColor(R.color.white));
                 etComment.setPadding(margin, 0, margin, 0);
                 etComment.setLayoutParams(etParams);
-                etComment.setInputType(InputType.TYPE_TEXT_FLAG_MULTI_LINE);
-                etComment.setMinLines(5);
-                etComment.setMaxLines(20);
+                etComment.setMaxLines(5);
                 etComment.setScrollBarStyle(View.SCROLLBARS_INSIDE_INSET);
-                etComment.setLines(5);
                 etComment.setOverScrollMode(OVER_SCROLL_ALWAYS);
                 etComment.canScrollHorizontally(View.SCROLL_AXIS_VERTICAL);
 
@@ -203,9 +225,14 @@ public class PublicInputViewActivity extends AppCompatActivity implements AfterG
                 Button cancelButton = new Button(mContext);
                 cancelButton.setText("CANCEL");
 
+                LinearLayout llButtons = new LinearLayout(mContext);
+                llButtons.setOrientation(LinearLayout.HORIZONTAL);
+                llButtons.setGravity(Gravity.END);
+
                 linearLayout1.addView(etComment);
-                linearLayout1.addView(postButton);
-                linearLayout1.addView(cancelButton);
+                llButtons.addView(cancelButton);
+                llButtons.addView(postButton);
+                linearLayout1.addView(llButtons);
 
                 etComment.requestFocus();
                 final InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
@@ -225,7 +252,6 @@ public class PublicInputViewActivity extends AppCompatActivity implements AfterG
                                             inputMethodManager.toggleSoftInputFromWindow(linearLayout1.getApplicationWindowToken(), InputMethodManager.SHOW_IMPLICIT, 0);
                                         }
                                     }).show();
-//                            Toast.makeText(MapActivity.this, "A comment must be entered to post", Toast.LENGTH_SHORT).show();
                             return;
                         }
                         Bundle bundle = new Bundle();
@@ -238,13 +264,6 @@ public class PublicInputViewActivity extends AppCompatActivity implements AfterG
                         inputMethodManager.toggleSoftInputFromWindow(linearLayout1.getApplicationWindowToken(), InputMethodManager.HIDE_IMPLICIT_ONLY, 0);
                         cardView.removeView(linearLayout1);
                         setCommentsAdapter(String.valueOf(myItem.getId()));
-
-//                        if (noPicture) {
-//                            cardView.animate()
-//                                    .translationY(translationY)
-//                                    .setInterpolator(new AccelerateDecelerateInterpolator())
-//                                    .setDuration(animDur);
-//                        }
                     }
                 });
 
@@ -253,18 +272,64 @@ public class PublicInputViewActivity extends AppCompatActivity implements AfterG
                     public void onClick(View v) {
                         cardView.removeView(linearLayout1);
                         inputMethodManager.toggleSoftInputFromWindow(linearLayout1.getApplicationWindowToken(), InputMethodManager.HIDE_IMPLICIT_ONLY, 0);
-
-//                        if (noPicture) {
-//                            cardView.animate()
-//                                    .translationY(translationY)
-//                                    .setInterpolator(new AccelerateDecelerateInterpolator())
-//                                    .setDuration(animDur);
-//                        }
                     }
                 });
             }
         });
-        entryLayout.addView(ibComment);
+
+        LinearLayout ratingsLayout = new LinearLayout(this);
+        ratingsLayout.setOrientation(LinearLayout.HORIZONTAL);
+        ratingsLayout.setGravity(Gravity.END);
+
+        LinearLayout.LayoutParams ratingParams = new LinearLayout.LayoutParams(200, ViewGroup.LayoutParams.WRAP_CONTENT);
+
+        ibRatingDown = new ImageButton(this);
+        ibRatingDown.setLayoutParams(ratingParams);
+        ibRatingDown.setImageResource(R.drawable.ic_rate_down);
+        ibRatingDown.setBackground(null);
+        ibRatingDown.setScaleType(ImageView.ScaleType.CENTER_CROP);
+
+        tvRating = new TextView(this);
+        tvRating.setLayoutParams(commentButtonParams);
+        tvRating.setText(dh.getRatingForPublicInput(String.valueOf(myItem.getId())));
+        tvRating.setPadding(0, 20, 0, 0);
+
+        ibRatingUp = new ImageButton(this);
+        ibRatingUp.setLayoutParams(ratingParams);
+        ibRatingUp.setImageResource(R.drawable.ic_rate_up);
+        ibRatingUp.setBackground(null);
+        ibRatingUp.setScaleType(ImageView.ScaleType.CENTER_CROP);
+
+        entryLayout.addView(ratingsLayout);
+        ratingsLayout.addView(ibRatingDown);
+        ratingsLayout.addView(tvRating);
+        ratingsLayout.addView(ibRatingUp);
+        ratingsLayout.addView(ibComment);
+
+        ibRatingUp.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (Universals.isAnon) {
+                    Toast.makeText(mContext, "You cannot vote on comments anonymously", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                rateChangerClicked(true, String.valueOf(myItem.getId()));
+            }
+        });
+
+        ibRatingDown.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (Universals.isAnon) {
+                    Toast.makeText(mContext, "You cannot vote on comments anonymously", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                rateChangerClicked(false, String.valueOf(myItem.getId()));
+            }
+        });
+
+        updateRating();
+
         //END: create and set comment button & posting functions
 
         //START: create ListView for comments
@@ -272,6 +337,9 @@ public class PublicInputViewActivity extends AppCompatActivity implements AfterG
 
         ListView.LayoutParams lvParams = new AbsListView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         listView.setLayoutParams(lvParams);
+        listView.setBackgroundColor(getColor(R.color.white));
+        listView.setDividerHeight(0);
+        listView.setDivider(null);
 
         setCommentsAdapter(String.valueOf(myItem.getId()));
 
@@ -302,6 +370,29 @@ public class PublicInputViewActivity extends AppCompatActivity implements AfterG
         timeString = timeString.substring(1);
         timeString += "-" + year;
         return timeString;
+    }
+
+    private void rateChangerClicked(boolean positive, String myId) {
+        dh.updatePIRatingGivenByUser(positive, myId);
+        tvRating.setText(dh.getRatingForPublicInput(String.valueOf(myItem.getId())));
+        updateRating();
+    }
+
+    private void updateRating() {
+        int ratingGiven = dh.checkPIRatingGiven(String.valueOf(myItem.getId()));
+        switch (ratingGiven) {
+            case DatabaseHelper.NO_RATING_GIVEN:
+                ibRatingUp.setAlpha(.5f);
+                ibRatingDown.setAlpha(.5f);
+                break;
+            case DatabaseHelper.NEG_RATING_GIVEN:
+                ibRatingDown.setAlpha(1f);
+                ibRatingUp.setAlpha(.5f);
+                break;
+            case DatabaseHelper.POS_RATING_GIVEN:
+                ibRatingUp.setAlpha(1f);
+                ibRatingDown.setAlpha(.5f);
+        }
     }
 
     @Override
@@ -396,8 +487,10 @@ public class PublicInputViewActivity extends AppCompatActivity implements AfterG
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            progressBar.setVisibility(View.VISIBLE);
-            mImageView.setImageBitmap(null);
+            if (progressBar != null) {
+                progressBar.setVisibility(View.VISIBLE);
+            }
+//            mImageView.setImageBitmap(null);
         }
 
         protected Bitmap doInBackground(String... urls) {
@@ -442,7 +535,9 @@ public class PublicInputViewActivity extends AppCompatActivity implements AfterG
             bmImage.animate()
                     .setDuration(500)
                     .alphaBy(1f);
-            progressBar.setVisibility(View.GONE);
+            if (progressBar != null) {
+                progressBar.setVisibility(View.GONE);
+            }
         }
     }
 }

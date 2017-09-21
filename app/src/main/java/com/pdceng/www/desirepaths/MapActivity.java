@@ -28,6 +28,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AccelerateInterpolator;
@@ -43,6 +44,7 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
@@ -92,6 +94,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Scanner;
@@ -174,10 +177,9 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         setClickListeners();
         bringUpMap();
         checkPermission();
-        chooseProject();
     }
 
-    private void chooseProject() {
+    private void chooseProject(final GoogleMap googleMap) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Choose a project");
         final String[] projects = dh.getAllProjectNames();
@@ -185,8 +187,9 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         builder.setItems(projects, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                Universals.PROJECT_NAME = projects[which];
+                Universals.PROJECT = dh.getProjectObject(projects[which]);
                 dialog.dismiss();
+                establishMap(googleMap);
             }
         });
         builder.create();
@@ -259,19 +262,19 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 moveToPreviousCameraPosition(v);
             }
         });
-        findViewById(R.id.cbPositive).setOnClickListener(new View.OnClickListener() {
+        findViewById(R.id.cbIdea).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 filterMarkers(v);
             }
         });
-        findViewById(R.id.cbNeutral).setOnClickListener(new View.OnClickListener() {
+        findViewById(R.id.cbComment).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 filterMarkers(v);
             }
         });
-        findViewById(R.id.cbNegative).setOnClickListener(new View.OnClickListener() {
+        findViewById(R.id.cbWarning).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 filterMarkers(v);
@@ -283,6 +286,45 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 runTutorial();
             }
         });
+        findViewById(R.id.info).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showProjectInfo();
+            }
+        });
+    }
+
+    private void showProjectInfo() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View view = LayoutInflater.from(getApplicationContext()).inflate(R.layout.project_info, null);
+        builder.setView(view);
+        TextView tvName = (TextView) view.findViewById(R.id.name);
+        TextView tvLocation = (TextView) view.findViewById(R.id.location);
+        TextView tvDescription = (TextView) view.findViewById(R.id.description);
+        Button bWebsite = (Button) view.findViewById(R.id.website);
+
+        final Project project = Universals.PROJECT;
+        tvName.setText(project.getName());
+        tvLocation.setText(project.getLocation());
+        tvDescription.setText(project.getDescription());
+
+        builder.setPositiveButton("Close", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+
+        bWebsite.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Uri uri = Uri.parse(project.getWebsite());
+                Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                startActivity(intent);
+            }
+        });
+
+        builder.show();
     }
 
     private void bringUpMap() {
@@ -314,8 +356,81 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
+        chooseProject(googleMap);
+    }
+
+    private void runTutorial() {
+        final String title = "Instructions";
+        if (Universals.isAnon) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle(title);
+            builder.setMessage("As an anonymous user, you can view public input, but you cannot rate or comment. Enjoy!");
+            builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.dismiss();
+                }
+            });
+            builder.show();
+        } else {
+            final TranslateAnimation mAnimation = new TranslateAnimation(0, 0, 0, 30);
+            mAnimation.setDuration(500);
+            mAnimation.setRepeatCount(-1);
+            mAnimation.setRepeatMode(Animation.REVERSE);
+            mAnimation.setInterpolator(new LinearInterpolator());
+
+            final View addArrow = findViewById(R.id.addArrow);
+            final View thumbsArrow = findViewById(R.id.thumbsArrow);
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle(title);
+            builder.setMessage("Add public input using a photo and/or an idea, comment or warning." + " (1/3)");
+            addArrow.setVisibility(View.VISIBLE);
+            addArrow.setAnimation(mAnimation);
+            builder.setCancelable(false);
+            builder.setPositiveButton("Next", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.dismiss();
+                    addArrow.setAnimation(null);
+                    addArrow.setVisibility(View.GONE);
+                    AlertDialog.Builder builder1 = new AlertDialog.Builder(mContext);
+                    builder1.setCancelable(false);
+                    builder1.setTitle(title);
+                    builder1.setMessage("Click on the map markers to view others' public input, agree or disagree, and add comments." + " (2/3)");
+                    builder1.setPositiveButton("Next", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.dismiss();
+                            AlertDialog.Builder builder2 = new AlertDialog.Builder(mContext);
+                            builder2.setCancelable(false);
+                            builder2.setTitle(title);
+                            builder2.setMessage("Click the 'thumbs' menu button to quickly flip through public input, and agree or disagree with them. Press OK to get started!" + " (3/3)");
+                            thumbsArrow.setVisibility(View.VISIBLE);
+                            thumbsArrow.setAnimation(mAnimation);
+                            builder2.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+//                                    ToggleButton tb = (ToggleButton) findViewById(R.id.addInputToggle);
+//                                    tb.setChecked(true);
+//                                    toggleOptions(tb);
+                                    thumbsArrow.setAnimation(null);
+                                    thumbsArrow.setVisibility(View.INVISIBLE);
+                                    dialog.dismiss();
+                                }
+                            });
+                            builder2.show();
+                        }
+                    });
+                    builder1.show();
+                }
+            });
+            builder.show();
+        }
+    }
+
+    void establishMap(GoogleMap googleMap) {
         mMap = googleMap;
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(startingPoint, 11));
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(Universals.PROJECT.getLatLng(), Universals.PROJECT.getZoom()));
         mMap.setOnInfoWindowClickListener(this);
 
         //Add geometry to Fairbanks
@@ -395,8 +510,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
         mClusterManager = new ClusterManager<>(this, mMap);
 
-        setUpCluster();
-
         mClusterManager.setOnClusterItemClickListener(new ClusterManager.OnClusterItemClickListener<MyItem>() {
             @Override
             public boolean onClusterItemClick(final MyItem myItem) {
@@ -408,76 +521,9 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
         Universals.mapActivity = this;
 
+        setUpCluster();
+
 //        runTutorial();
-    }
-
-    private void runTutorial() {
-        final String title = "Welcome, Airport Way Stakeholders!";
-        if (Universals.isAnon) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setTitle(title);
-            builder.setMessage("As an anonymous user, you can view public input, but you cannot rate or comment. Enjoy!");
-            builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    dialog.dismiss();
-                }
-            });
-            builder.show();
-        } else {
-            final TranslateAnimation mAnimation = new TranslateAnimation(0, 0, 0, 30);
-            mAnimation.setDuration(500);
-            mAnimation.setRepeatCount(-1);
-            mAnimation.setRepeatMode(Animation.REVERSE);
-            mAnimation.setInterpolator(new LinearInterpolator());
-
-            final View addArrow = findViewById(R.id.addArrow);
-            final View thumbsArrow = findViewById(R.id.thumbsArrow);
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setTitle(title);
-            builder.setMessage("Add public input using a photo and/or comment." + " (1/3)");
-            addArrow.setVisibility(View.VISIBLE);
-            addArrow.setAnimation(mAnimation);
-            builder.setCancelable(false);
-            builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    dialog.dismiss();
-                    addArrow.setAnimation(null);
-                    addArrow.setVisibility(View.GONE);
-                    AlertDialog.Builder builder1 = new AlertDialog.Builder(mContext);
-                    builder1.setCancelable(false);
-                    builder1.setTitle(title);
-                    builder1.setMessage("Click on the map markers to view others' comments and interact with them." + " (2/3)");
-                    builder1.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            dialog.dismiss();
-                            AlertDialog.Builder builder2 = new AlertDialog.Builder(mContext);
-                            builder2.setCancelable(false);
-                            builder2.setTitle(title);
-                            builder2.setMessage("Click the 'thumbs' button to agree or disagree with comments. Press OK to get started!" + " (3/3)");
-                            thumbsArrow.setVisibility(View.VISIBLE);
-                            thumbsArrow.setAnimation(mAnimation);
-                            builder2.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-//                                    ToggleButton tb = (ToggleButton) findViewById(R.id.addInputToggle);
-//                                    tb.setChecked(true);
-//                                    toggleOptions(tb);
-                                    thumbsArrow.setAnimation(null);
-                                    thumbsArrow.setVisibility(View.INVISIBLE);
-                                    dialog.dismiss();
-                                }
-                            });
-                            builder2.show();
-                        }
-                    });
-                    builder1.show();
-                }
-            });
-            builder.show();
-        }
     }
 
     void unCheckToggleButtons() {
@@ -496,7 +542,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     public void onInfoWindowClick(Marker marker) {
         Toast.makeText(MapActivity.this, marker.getPosition().toString(), Toast.LENGTH_SHORT).show();
     }
-
 
     void openPublicInputView(final MyItem myItem) {
         Intent intent = new Intent(this, PublicInputViewActivity.class);
@@ -576,6 +621,31 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
     void addItems(String... strings) {
         Bundle[] bundles = dh.getAllInTable(new PIEntryTable());
+        List<Bundle> bundleList = new ArrayList<>();
+        Collections.addAll(bundleList, bundles);
+        System.out.println("Universals.PROJECT.getId(): " + Universals.PROJECT.getId());
+        List<Bundle> removeList = new ArrayList<>();
+        for (Bundle bundle : bundleList) {
+            if (Integer.valueOf(bundle.getString(PIEntryTable.PROJECT_ID)) != Universals.PROJECT.getId()) {
+                removeList.add(bundle);
+            }
+        }
+        bundleList.removeAll(removeList);
+        bundles = bundleList.toArray(new Bundle[bundleList.size()]);
+
+        if (bundles.length < 1 && strings != null && strings[0] == null) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("Welcome!");
+            builder.setMessage("There is no public input yet.\nBe the first!");
+            builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.dismiss();
+                    runTutorial();
+                }
+            }).show();
+        }
+
         mClusterManager.clearItems();
 
         for (Bundle bundle : bundles) {
@@ -771,7 +841,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private void toggleReturnFab() {
         if (hasPreviousPosition()) {
             prevMapFab.setVisibility(View.VISIBLE);
-            if (!Universals.prevMapTutorialWasShown) {
+            /*if (!Universals.prevMapTutorialWasShown) {
                 final View arrow = findViewById(R.id.arrow);
                 arrow.setVisibility(View.VISIBLE);
                 AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -793,7 +863,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                     }
                 });
                 builder.show();
-            }
+            }*/
         } else {
             prevMapFab.setVisibility(View.INVISIBLE);
         }
@@ -881,15 +951,15 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
     void filterMarkers(View v) {
         if (v instanceof CheckBox) {
-            CheckBox cbPositive = (CheckBox) findViewById(R.id.cbPositive);
-            CheckBox cbNeutral = (CheckBox) findViewById(R.id.cbNeutral);
-            CheckBox cbNegative = (CheckBox) findViewById(R.id.cbNegative);
+            CheckBox cbIdea = (CheckBox) findViewById(R.id.cbIdea);
+            CheckBox cbComment = (CheckBox) findViewById(R.id.cbComment);
+            CheckBox cbWarning = (CheckBox) findViewById(R.id.cbWarning);
 
-            CheckBox[] cbs = new CheckBox[]{cbPositive, cbNeutral, cbNegative};
+            CheckBox[] cbs = new CheckBox[]{cbIdea, cbComment, cbWarning};
             List<String> strings = new ArrayList<>();
             for (CheckBox cb : cbs) {
                 if (cb.isChecked()) {
-                    strings.add(cb.getText().toString().toLowerCase());
+                    strings.add(cb.getText().toString().toLowerCase().substring(0, cb.getText().toString().length() - 1));
                 }
             }
             if (strings.size() == 0) {
@@ -918,7 +988,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             bundle.putString(PIEntryTable.SENTIMENT, publicInput.getSentiment());
             bundle.putString(PIEntryTable.TITLE, publicInput.getTitle());
             bundle.putString(PIEntryTable.SNIPPET, publicInput.getSnippet());
-            bundle.putString(PIEntryTable.USER, publicInput.getUser());
+            bundle.putString(PIEntryTable.SOCIAL_MEDIA_ID, publicInput.getSocialMediaId());
             bundle.putString(PIEntryTable.TIMESTAMP, publicInput.getTimestamp());
             dh.insert(bundle, new PIEntryTable());
         }
@@ -979,7 +1049,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         final Button okButton = new Button(mContext);
         okButton.setText(R.string.OK);
         RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_END);
+//        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_END);
         layoutParams.addRule(RelativeLayout.ABOVE, findViewById(R.id.menu).getId());
 
         okButton.setLayoutParams(layoutParams);
@@ -992,14 +1062,14 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
         BitmapDescriptor mIcon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE);
         switch (sentiment) {
-            case "positive":
-                mIcon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN);
+            case Universals.IDEA:
+                mIcon = BitmapDescriptorFactory.fromResource(R.drawable.idea_icon);
                 break;
-            case "neutral":
-                mIcon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW);
+            case Universals.COMMENT:
+                mIcon = BitmapDescriptorFactory.fromResource(R.drawable.comment_icon);
                 break;
-            case "negative":
-                mIcon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED);
+            case Universals.WARNING:
+                mIcon = BitmapDescriptorFactory.fromResource(R.drawable.attention_icon);
         }
 
         final Marker tempMarker = mMap.addMarker(new MarkerOptions()
@@ -1047,7 +1117,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 bundle.putString(PIEntryTable.SENTIMENT, sentiment);
                 bundle.putString(PIEntryTable.TITLE, title);
                 bundle.putString(PIEntryTable.SNIPPET, snippet);
-                bundle.putString(PIEntryTable.USER, Universals.USER_NAME);
+                bundle.putString(PIEntryTable.SOCIAL_MEDIA_ID, Universals.SOCIAL_MEDIA_ID);
+                bundle.putString(PIEntryTable.PROJECT_ID, String.valueOf(Universals.PROJECT.getId()));
                 bundle.putString(PIEntryTable.TIMESTAMP, new Timestamp(System.currentTimeMillis()).toString());
                 dh.insert(bundle, new PIEntryTable());
                 Toast.makeText(mContext, "Content added!", Toast.LENGTH_SHORT).show();

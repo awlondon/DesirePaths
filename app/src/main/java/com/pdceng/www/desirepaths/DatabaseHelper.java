@@ -10,7 +10,8 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
-import android.widget.Toast;
+
+import com.google.android.gms.maps.model.LatLng;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -63,8 +64,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL(createTableString(new PIEntryTable()));
         db.execSQL(createTableString(new CommentsTable()));
         db.execSQL(createTableString(new UserTable()));
-        db.execSQL(createTableString(new AnonymousTable()));
         db.execSQL(createTableString(new ProjectTable()));
+        db.execSQL(createTableString(new AnonymousTable()));
     }
 
     @Override
@@ -75,6 +76,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL("DROP TABLE IF EXISTS " + PIEntryTable.TABLE_NAME);
         db.execSQL("DROP TABLE IF EXISTS " + UserTable.TABLE_NAME);
         db.execSQL("DROP TABLE IF EXISTS " + CommentsTable.TABLE_NAME);
+        db.execSQL("DROP TABLE IF EXISTS " + AnonymousTable.TABLE_NAME);
+        db.execSQL("DROP TABLE IF EXISTS " + ProjectTable.TABLE_NAME);
 
         onCreate(db);
     }
@@ -137,6 +140,28 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         Universals.USER_NAME = "Anonymous User";
     }
 
+    synchronized Project getProjectObject(String project_name) {
+        Bundle bundle = getRow(new ProjectTable(), ProjectTable.NAME, project_name);
+        Project result = new Project();
+        result.setId(bundle.getInt(ProjectTable.ID));
+        result.setName(bundle.getString(ProjectTable.NAME));
+        result.setDescription(bundle.getString(ProjectTable.DESCRIPTION));
+        result.setLatLng(new LatLng(
+                Double.valueOf(bundle.getString(ProjectTable.LATITUDE)),
+                Double.valueOf(bundle.getString(ProjectTable.LONGITUDE))));
+        result.setLocation(bundle.getString(ProjectTable.LOCATION));
+        result.setWebsite(bundle.getString(ProjectTable.WEBSITE));
+        result.setZoom(Integer.valueOf(bundle.getString(ProjectTable.ZOOM)));
+        List<String> questionsList = new ArrayList<>();
+        String questions = bundle.getString(ProjectTable.QUESTIONS);
+        assert questions != null;
+        String[] questionsArray = questions.split("/");
+        Collections.addAll(questionsList, questionsArray);
+        result.setQuestions(questionsList);
+
+        return result;
+    }
+
     synchronized Bundle getRow(Table table, String col, String... args) {
         SQLiteDatabase db = getReadableDatabase();
 
@@ -147,6 +172,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             for (String field : table.getFields()) {
                 bundle.putString(field, c.getString(c.getColumnIndexOrThrow(field)));
             }
+        } else {
+            System.out.println("Could not find row!!!");
         }
         c.close();
         db.close();
@@ -162,14 +189,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             String sql = querySQLString(table.tableName(), null, null);
             getJSONFromUrl(sql, afterGetAll);
         }
-        Toast.makeText(mContext, "All data is loaded", Toast.LENGTH_SHORT).show();
+//        Toast.makeText(mContext, "All data is loaded", Toast.LENGTH_SHORT).show();
     }
 
     synchronized Bundle[] getAllInTable(Table table) {
         SQLiteDatabase db = getReadableDatabase();
         ArrayList<Bundle> bundles = new ArrayList<>();
         Cursor c = db.query(table.tableName(), null, null, null, null, null, null);
-        if (c != null && c.moveToFirst()) {
+        System.out.println("rows found: " + c.getCount());
+        if (c.moveToFirst()) {
             do {
                 Bundle bundle = new Bundle();
                 bundle.putInt(table.id(), c.getInt(c.getColumnIndexOrThrow(table.id())));
@@ -184,9 +212,21 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return bundles.toArray(new Bundle[bundles.size()]);
     }
 
-    synchronized PublicInput[] getAllPublicInput() {
+    synchronized PublicInput[] getPublicInputByCurrentProject() {
         Bundle[] bundles = getAllInTable(new PIEntryTable());
         ArrayList<PublicInput> resultArrayList = new ArrayList<>();
+
+        List<Bundle> bundleList = new ArrayList<>();
+        List<Bundle> removeList = new ArrayList<>();
+        Collections.addAll(bundleList, bundles);
+        for (Bundle bundle :
+                bundleList) {
+            if (Integer.valueOf(bundle.getString(PIEntryTable.PROJECT_ID)) != Universals.PROJECT.getId()) {
+                removeList.add(bundle);
+            }
+        }
+        bundleList.removeAll(removeList);
+        bundles = bundleList.toArray(new Bundle[bundleList.size()]);
 
         for (Bundle bundle : bundles) {
             PublicInput publicInput = new PublicInput(mContext);
@@ -198,29 +238,69 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             publicInput.setTimestamp(bundle.getString(PIEntryTable.TIMESTAMP));
             publicInput.setTitle(bundle.getString(PIEntryTable.TITLE));
             publicInput.setUrl(bundle.getString(PIEntryTable.URL));
-            publicInput.setUser(bundle.getString(PIEntryTable.USER));
+            publicInput.setSocialMediaId(bundle.getString(PIEntryTable.SOCIAL_MEDIA_ID));
+            publicInput.setProject_id(Integer.valueOf(bundle.getString(PIEntryTable.PROJECT_ID)));
             resultArrayList.add(publicInput);
         }
 
         String[] userPIRatings = getUserPIRatings();
-        ArrayList<PublicInput> removeList = new ArrayList<>();
+        ArrayList<PublicInput> removeList2 = new ArrayList<>();
         if (userPIRatings != null) {
             for (PublicInput publicInput : resultArrayList) {
                 for (String id : userPIRatings) {
                     if (publicInput.getID().equals(id)) {
-                        removeList.add(publicInput);
+                        removeList2.add(publicInput);
                         break;
                     }
                 }
             }
-            resultArrayList.removeAll(removeList);
+            resultArrayList.removeAll(removeList2);
         }
 
         return resultArrayList.toArray(new PublicInput[resultArrayList.size()]);
     }
 
+    synchronized String getRatingForPublicInput(String myId) {
+        SQLiteDatabase db = getReadableDatabase();
+        System.out.println("id: " + myId);
+        int count = 0;
+        Cursor c = db.query(UserTable.TABLE_NAME, null, null, null, null, null, null);
+        System.out.println("users: " + c.getCount());
+        if (c != null && c.moveToFirst()) {
+            do {
+                String pi_agree = c.getString(c.getColumnIndexOrThrow(UserTable.PI_AGREE));
+                String pi_disagree = c.getString(c.getColumnIndexOrThrow(UserTable.PI_DISAGREE));
+                if (pi_agree != null && !Objects.equals(pi_agree, "null")) {
+                    String[] pi_agreeArray = pi_agree.split(";");
+                    for (String id : pi_agreeArray) {
+                        if (Objects.equals(myId, id)) {
+                            count++;
+                            break;
+                        }
+                    }
+                }
+
+                if (pi_disagree != null && !Objects.equals(pi_disagree, "null")) {
+                    String[] pi_disagreeArray = pi_disagree.split(";");
+                    for (String id :
+                            pi_disagreeArray) {
+                        if (Objects.equals(myId, id)) {
+                            count--;
+                            break;
+                        }
+                    }
+                }
+            } while (c.moveToNext());
+        }
+        c.close();
+        db.close();
+
+        return String.valueOf(count);
+    }
+
     synchronized String[] getAllProjectNames() {
         Bundle[] bundles = getAllInTable(new ProjectTable());
+        System.out.println("projects: " + bundles.length);
         ArrayList<String> resultArrayList = new ArrayList<>();
         for (Bundle bundle : bundles) {
             System.out.println(bundle.toString());
@@ -279,7 +359,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         String rating = getRow(new CommentsTable(), CommentsTable.ID, commentId[0]).getString(CommentsTable.RATING);
         String newRating = rating;
 
-        int ratingGiven = checkRatingGiven(commentId[0]);
+        int ratingGiven = checkCommentRatingGiven(commentId[0]);
 
         switch (ratingGiven) {
             case NO_RATING_GIVEN:
@@ -308,12 +388,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         postPHP(sql);
 
-        updateRatingsGivenByUser(positive, commentId[0]);
+        updateCommentRatingGivenByUser(positive, commentId[0]);
 
         return result;
     }
 
-    synchronized int checkRatingGiven(String commentId) {
+    synchronized int checkCommentRatingGiven(String commentId) {
         if (Universals.USER_NAME != null) {
             Bundle bundle = getRow(new UserTable(), UserTable.SOCIAL_MEDIA_ID, Universals.SOCIAL_MEDIA_ID);
 
@@ -344,7 +424,38 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
     }
 
-    private synchronized void updateRatingsGivenByUser(boolean positive, String commentId) {
+    synchronized int checkPIRatingGiven(String myId) {
+        if (Universals.USER_NAME != null) {
+            Bundle bundle = getRow(new UserTable(), UserTable.SOCIAL_MEDIA_ID, Universals.SOCIAL_MEDIA_ID);
+
+            String pi_agree = bundle.getString(UserTable.PI_AGREE);
+            String pi_disagree = bundle.getString(UserTable.PI_DISAGREE);
+            int result = NO_RATING_GIVEN;
+            if (pi_agree != null && !Objects.equals(pi_agree, "")) {
+                String[] pi_agreeArray = pi_agree.split(";");
+                for (String string : pi_agreeArray) {
+                    if (Objects.equals(string, myId)) {
+                        result = POS_RATING_GIVEN;
+                        break;
+                    }
+                }
+            }
+            if (result == NO_RATING_GIVEN && pi_disagree != null && !Objects.equals(pi_disagree, "")) {
+                String[] pi_disagreeArray = pi_disagree.split(";");
+                for (String string : pi_disagreeArray) {
+                    if (Objects.equals(string, myId)) {
+                        result = NEG_RATING_GIVEN;
+                        break;
+                    }
+                }
+            }
+            return result;
+        } else {
+            return NO_RATING_GIVEN;
+        }
+    }
+
+    private synchronized void updateCommentRatingGivenByUser(boolean positive, String commentId) {
         Bundle bundle = getRow(new UserTable(), UserTable.SOCIAL_MEDIA_ID, Universals.SOCIAL_MEDIA_ID);
 
         String prs = bundle.getString(UserTable.POSITIVE_RATINGS);
@@ -370,6 +481,40 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.close();
 
         String sql = updateSQLString(UserTable.TABLE_NAME, cv, UserTable.SOCIAL_MEDIA_ID + " = " + Universals.SOCIAL_MEDIA_ID);
+        postPHP(sql);
+    }
+
+    synchronized void updatePIRatingGivenByUser(boolean positive, String myId) {
+        System.out.println("getRow from: " + Universals.SOCIAL_MEDIA_ID);
+        Bundle bundle = getRow(new UserTable(), UserTable.SOCIAL_MEDIA_ID, Universals.SOCIAL_MEDIA_ID);
+
+        String pi_agree = bundle.getString(UserTable.PI_AGREE);
+        String pi_disagree = bundle.getString(UserTable.PI_DISAGREE);
+        String myIdAdj = myId + ";";
+
+        if (pi_agree == null || Objects.equals(pi_agree, "null")) pi_agree = "";
+        if (pi_disagree == null || Objects.equals(pi_disagree, "null")) pi_disagree = "";
+
+        if (pi_agree.contains(myIdAdj)) pi_agree = pi_agree.replace(myIdAdj, "");
+        else if (positive) pi_agree = pi_agree.concat(myIdAdj);
+
+        if (pi_disagree.contains(myIdAdj)) pi_disagree = pi_disagree.replace(myIdAdj, "");
+        else if (!positive) pi_disagree = pi_disagree.concat(myIdAdj);
+
+        System.out.println("pi_agree: " + pi_agree);
+        System.out.println("pi_disagree: " + pi_disagree);
+
+        //Update db
+        SQLiteDatabase db = getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put(UserTable.PI_AGREE, pi_agree);
+        cv.put(UserTable.PI_DISAGREE, pi_disagree);
+
+        db.update(UserTable.TABLE_NAME, cv, UserTable.SOCIAL_MEDIA_ID + "= ?", new String[]{Universals.SOCIAL_MEDIA_ID});
+        db.close();
+
+        String sql = updateSQLString(UserTable.TABLE_NAME, cv, UserTable.SOCIAL_MEDIA_ID + " = " + Universals.SOCIAL_MEDIA_ID);
+        System.out.println("sql: " + sql);
         postPHP(sql);
     }
 
@@ -625,9 +770,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 table = new PIEntryTable();
             } else if (JSONResult.contains(UserTable.PHOTO_URL)) {
                 table = new UserTable();
-            } else {
+            } else if (JSONResult.contains(CommentsTable.COMMENT)) {
                 table = new CommentsTable();
+            } else {
+                table = new ProjectTable();
             }
+            System.out.println("table: " + table.tableName());
 
             JSONArray jsonArray;
             try {
@@ -656,67 +804,5 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             }
             if (afterGetAll != null) afterGetAll.afterGetAll();
         }
-
-   /* JSONArray getJSONFromUrl(final String sql) {
-            JSONArray result = null;
-
-
-            ExecutorService executorService = Executors.newSingleThreadExecutor();
-            Future<JSONArray> urlGetResult = executorService.submit(new Callable<JSONArray>() {
-                @Override
-                public JSONArray call() throws Exception {
-                    HttpParse httpParse = new HttpParse();
-                    HashMap<String, String> hashMap = new HashMap<>();
-                    hashMap.put("sql", sql);
-                    JSONResult = httpParse.postRequest(hashMap, httpUrl);
-
-                    JSONArray jsonArray = null;
-                    if (JSONResult != null) {
-                        try {
-                            jsonArray = new JSONArray(JSONResult);
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                            jsonArray = null;
-                        }
-                    }
-                    return jsonArray;
-
-                   *//* OkHttpClient client = new OkHttpClient();
-
-                    RequestBody body = RequestBody.create(MediaType.parse(sql),sql);
-
-                    Request request = new Request.Builder()
-                            .url(httpUrl)
-                            .post(body)
-                            .build();
-
-                    Response response;
-                    JSONArray jsonArray = null;
-                    try {
-                        response = client.newCall(request).execute();
-                        JSONResult = response.body().string();
-                        if (JSONResult != null) {
-                            try {
-                                jsonArray = new JSONArray(JSONResult);
-                            } catch (JSONException e) {
-                                e.printStackTrace();
-                                jsonArray = null;
-                            }
-                        }
-
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    return jsonArray;*//*
-                }
-            });
-            try {
-                result = urlGetResult.get();
-            } catch (InterruptedException | ExecutionException e) {
-                e.printStackTrace();
-            }
-            executorService.shutdown();
-            return result;
-        }*/
     }
 }

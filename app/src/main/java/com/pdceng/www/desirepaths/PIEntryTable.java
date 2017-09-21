@@ -15,8 +15,9 @@ public class PIEntryTable implements Table {
     static final String SENTIMENT = "sentiment";
     static final String LATITUDE = "latitude";
     static final String LONGITUDE = "longitude";
-    static final String USER = "user";
+    static final String SOCIAL_MEDIA_ID = "user";
     static final String TIMESTAMP = "timestamp";
+    static final String PROJECT_ID = "project_id";
     static final String TABLE_NAME = "PIEntry_table";
 
     @Override
@@ -28,8 +29,9 @@ public class PIEntryTable implements Table {
         result.add(SENTIMENT);
         result.add(LATITUDE);
         result.add(LONGITUDE);
-        result.add(USER);
+        result.add(SOCIAL_MEDIA_ID);
         result.add(TIMESTAMP);
+        result.add(PROJECT_ID);
         return result;
     }
 

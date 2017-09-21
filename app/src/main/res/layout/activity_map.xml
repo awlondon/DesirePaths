@@ -51,25 +51,33 @@
 
         <include
             android:id="@+id/menu"
-            layout="@menu/bottom_menu"
-            android:layout_width="wrap_content"
+            layout="@layout/bottom_menu"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true" />
+
+        <include
+            android:id="@+id/zoomButtons"
+            layout="@layout/zoom_buttons"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_above="@id/menu"
+            android:layout_alignParentEnd="true" />
 
         <include
             android:id="@+id/addType"
             layout="@layout/add_type"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_above="@+id/menu"
+            android:layout_above="@id/menu"
             android:layout_margin="10dp" />
 
         <ImageView
             android:id="@+id/addArrow"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_above="@+id/menu"
-            android:layout_marginStart="10dp"
+            android:layout_above="@id/menu"
+            android:layout_marginStart="20dp"
             android:visibility="invisible"
             map:srcCompat="@drawable/arrow_down" />
 
@@ -78,17 +86,17 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_above="@+id/menu"
-            android:layout_marginStart="75dp"
+            android:layout_marginStart="95dp"
             android:visibility="invisible"
             map:srcCompat="@drawable/arrow_down" />
 
         <LinearLayout
             android:id="@+id/llFilter"
-            android:layout_width="100dp"
+            android:layout_width="120dp"
             android:layout_height="100dp"
             android:layout_above="@+id/menu"
             android:layout_marginBottom="10dp"
-            android:layout_marginStart="140dp"
+            android:layout_marginStart="130dp"
             android:background="@drawable/rounded_corners"
             android:clickable="true"
             android:orientation="vertical"
@@ -96,26 +104,26 @@
             android:visibility="invisible">
 
             <CheckBox
-                android:id="@+id/cbPositive"
+                android:id="@+id/cbIdea"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:checked="true"
-                android:text="Positive" />
+                android:text="Ideas" />
 
             <CheckBox
-                android:id="@+id/cbNeutral"
+                android:id="@+id/cbComment"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:checked="true"
-                android:text="Neutral" />
+                android:text="Comments" />
 
             <CheckBox
-                android:id="@+id/cbNegative"
+                android:id="@+id/cbWarning"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:checked="true"
-                android:text="Negative" />
+                android:text="Warnings" />
         </LinearLayout>
 
     </RelativeLayout>

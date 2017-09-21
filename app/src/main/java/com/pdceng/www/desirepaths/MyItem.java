@@ -15,6 +15,7 @@ import java.sql.Timestamp;
 
 public class MyItem implements ClusterItem {
     private Bundle mBundle;
+    private PublicInput mPublicInput;
     private LatLng mPosition;
     private String mTitle;
     private String mSnippet;
@@ -25,36 +26,33 @@ public class MyItem implements ClusterItem {
     private Timestamp mTimestamp;
     private Integer mId;
 
-    public MyItem(Bundle bundle) {
+    MyItem(Bundle bundle) {
         mBundle = bundle;
         mPosition = new LatLng(
                 Float.valueOf(bundle.getString(PIEntryTable.LATITUDE)),
                 Float.valueOf(bundle.getString(PIEntryTable.LONGITUDE)));
-
         mTitle = bundle.getString(PIEntryTable.TITLE);
-
         mSnippet = bundle.getString(PIEntryTable.SNIPPET);
-
         mSentiment = bundle.getString(PIEntryTable.SENTIMENT);
-
-        switch (mSentiment) {
-            case "positive":
-                mIcon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN);
-                break;
-            case "neutral":
-                mIcon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW);
-                break;
-            case "negative":
-                mIcon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED);
-        }
-
+        createSentimentMarker();
         mBitmapUrlString = bundle.getString(PIEntryTable.URL);
-
-        mUser = bundle.getString(PIEntryTable.USER);
-
+        mUser = bundle.getString(PIEntryTable.SOCIAL_MEDIA_ID);
         mTimestamp = Timestamp.valueOf(bundle.getString(PIEntryTable.TIMESTAMP));
-
         mId = bundle.getInt(PIEntryTable.ID);
+    }
+
+    MyItem(PublicInput publicInput) {
+        mPublicInput = publicInput;
+        mPosition = new LatLng(
+                mPublicInput.getLatitude(), mPublicInput.getLatitude());
+        mTitle = mPublicInput.getTitle();
+        mSnippet = mPublicInput.getSnippet();
+        mSentiment = mPublicInput.getSentiment();
+        createSentimentMarker();
+        mBitmapUrlString = mPublicInput.getUrl();
+        mUser = mPublicInput.getSocialMediaId();
+        mTimestamp = Timestamp.valueOf(mPublicInput.getTimestamp());
+        mId = Integer.valueOf(mPublicInput.getID());
     }
 
     @Override
@@ -118,5 +116,39 @@ public class MyItem implements ClusterItem {
 
     public Bundle getBundle() {
         return mBundle;
+    }
+
+    public PublicInput getPublicInput() {
+        return mPublicInput;
+    }
+
+    private void createSentimentMarker() {
+        switch (mSentiment) {
+            case Universals.IDEA:
+                mIcon = BitmapDescriptorFactory.fromResource(R.drawable.idea_icon);
+                break;
+            case Universals.COMMENT:
+                mIcon = BitmapDescriptorFactory.fromResource(R.drawable.comment_icon);
+                break;
+            case Universals.WARNING:
+                mIcon = BitmapDescriptorFactory.fromResource(R.drawable.attention_icon);
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "MyItem{" +
+                "mBundle=" + mBundle +
+                ", mPublicInput=" + mPublicInput +
+                ", mPosition=" + mPosition +
+                ", mTitle='" + mTitle + '\'' +
+                ", mSnippet='" + mSnippet + '\'' +
+                ", mIcon=" + mIcon +
+                ", mBitmapUrlString='" + mBitmapUrlString + '\'' +
+                ", mSentiment='" + mSentiment + '\'' +
+                ", mUser='" + mUser + '\'' +
+                ", mTimestamp=" + mTimestamp +
+                ", mId=" + mId +
+                '}';
     }
 }

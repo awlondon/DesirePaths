@@ -41,13 +41,18 @@ public class PublicInput {
     @Expose
     private double longitude;
 
-    @SerializedName("user")
+    @SerializedName("socialMediaId")
     @Expose
-    private String user;
+    private String socialMediaId;
 
     @SerializedName("timestamp")
     @Expose
     private String timestamp;
+
+    @SerializedName("project_id")
+    @Expose
+    private int project_id;
+
     private Context context;
 
 
@@ -111,12 +116,12 @@ public class PublicInput {
         this.sentiment = sentiment;
     }
 
-    public String getUser() {
-        return user;
+    public String getSocialMediaId() {
+        return socialMediaId;
     }
 
-    public void setUser(String user) {
-        this.user = user;
+    public void setSocialMediaId(String socialMediaId) {
+        this.socialMediaId = socialMediaId;
     }
 
     public String getTimestamp() {
@@ -125,6 +130,14 @@ public class PublicInput {
 
     public void setTimestamp(String timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public int getProject_id() {
+        return project_id;
+    }
+
+    public void setProject_id(int project_id) {
+        this.project_id = project_id;
     }
 
     //Non-trivial

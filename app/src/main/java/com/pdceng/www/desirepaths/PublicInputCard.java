@@ -5,6 +5,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
+import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
 import android.webkit.URLUtil;
@@ -44,6 +45,15 @@ public class PublicInputCard {
     @View(R.id.imageView)
     private ImageView publicInputImageView;
 
+    @View(R.id.ivProfile)
+    private ImageView ivProfile;
+
+    @View(R.id.ivIcon)
+    private ImageView ivIcon;
+
+    @View(R.id.user)
+    private TextView tvUser;
+
     @View(R.id.title)
     private TextView tvTitle;
 
@@ -54,19 +64,38 @@ public class PublicInputCard {
     private Context mContext;
     private SwipePlaceHolderView mSwipeView;
     private Universals universals;
+    private Bundle userBundle;
+    private DatabaseHelper dh;
 
     public PublicInputCard(Context context, PublicInput publicInput, SwipePlaceHolderView swipeView) {
         mContext = context;
         mPublicInput = publicInput;
         mSwipeView = swipeView;
+        dh = new DatabaseHelper(mContext);
+        userBundle = dh.getRow(new UserTable(), UserTable.SOCIAL_MEDIA_ID, mPublicInput.getSocialMediaId());
     }
 
     @Resolve
     private void onResolved(){
         universals = new Universals(mContext);
         new DownloadImageTask(publicInputImageView).execute(mPublicInput.getUrl());
+        new DownloadImageTask(ivProfile).execute(userBundle.getString(UserTable.PHOTO_URL));
+        tvUser.setText(userBundle.getString(UserTable.NAME));
         tvTitle.setText(mPublicInput.getTitle());
         tvSnippet.setText(mPublicInput.getSnippet());
+
+        int imageRes = 0;
+        switch (mPublicInput.getSentiment()) {
+            case Universals.IDEA:
+                imageRes = R.drawable.idea_icon;
+                break;
+            case Universals.COMMENT:
+                imageRes = R.drawable.comment_icon;
+                break;
+            case Universals.WARNING:
+                imageRes = R.drawable.attention_icon;
+        }
+        ivIcon.setImageResource(imageRes);
     }
 
     @SwipeOut
@@ -126,38 +155,43 @@ public class PublicInputCard {
             Bitmap bitmap = null;
 
             if (!URLUtil.isValidUrl(urlDisplay)) {
-                if (!universals.isBitmapInMemoryCache(urlDisplay)) {
-                    FTPClient ftpClient = new FTPClient();
-                    System.out.println("Starting connection to FTP site!");
-                    try {
-                        ftpClient.connect("153.92.6.4");
-                        ftpClient.login(mContext.getResources().getString(R.string.ftp_username), mContext.getResources().getString(R.string.ftp_password));
-                        ftpClient.enterLocalPassiveMode();
-                        ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
+                if (!Universals.isBitmapInMemoryCache(urlDisplay)) {
+                    if (urlDisplay == null || urlDisplay.isEmpty()) {
 
-                        File file = new File(Environment.getExternalStorageDirectory() + File.separator + urlDisplay);
-                        Log.d("filepath", file.getAbsolutePath());
-                        FileOutputStream fos = new FileOutputStream(file);
-                        ftpClient.retrieveFile(urlDisplay, fos);
-                        fos.flush();
-                        fos.close();
-                        bitmap = BitmapFactory.decodeFile(file.getAbsolutePath());
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                    } else {
+                        FTPClient ftpClient = new FTPClient();
+                        System.out.println("Starting connection to FTP site!");
+                        try {
+                            ftpClient.connect("153.92.6.4");
+                            ftpClient.login(mContext.getResources().getString(R.string.ftp_username), mContext.getResources().getString(R.string.ftp_password));
+                            ftpClient.enterLocalPassiveMode();
+                            ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
+
+                            File file = new File(Environment.getExternalStorageDirectory() + File.separator + urlDisplay);
+                            Log.d("filepath", file.getAbsolutePath());
+                            FileOutputStream fos = new FileOutputStream(file);
+                            ftpClient.retrieveFile(urlDisplay, fos);
+                            fos.flush();
+                            fos.close();
+                            bitmap = BitmapFactory.decodeFile(file.getAbsolutePath());
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        System.out.println("urlDisplay: " + urlDisplay);
+                        System.out.println("bitmap: " + bitmap);
+                        Universals.addBitmapToMemoryCache(urlDisplay, bitmap);
                     }
-                    System.out.println("urlDisplay: " + urlDisplay);
-                    System.out.println("bitmap: " + bitmap);
-                    universals.addBitmapToMemoryCache(urlDisplay, bitmap);
                 }
-                bitmap = universals.getBitmapFromMemoryCache(urlDisplay);
+                bitmap = Universals.getBitmapFromMemoryCache(urlDisplay);
             } else {
-                if (!universals.isBitmapInMemoryCache(urlDisplay)) {
-                    universals.addBitmapToMemoryCache(urlDisplay, universals.getBitmapFromURL(urlDisplay, 500, 500));
+                if (!Universals.isBitmapInMemoryCache(urlDisplay)) {
+                    Universals.addBitmapToMemoryCache(urlDisplay, Universals.getBitmapFromURL(urlDisplay, 500, 500));
                 }
-                bitmap = universals.getBitmapFromMemoryCache(urlDisplay);
+                bitmap = Universals.getBitmapFromMemoryCache(urlDisplay);
             }
 
             return bitmap;
+
         }
 
         protected void onPostExecute(Bitmap result) {

@@ -13,6 +13,7 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.CardView;
+import android.text.InputFilter;
 import android.text.InputType;
 import android.view.View;
 import android.view.ViewGroup;
@@ -38,7 +39,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.sql.Timestamp;
 
+import static android.R.attr.maxLength;
 import static android.graphics.Color.LTGRAY;
+import static android.view.View.OVER_SCROLL_ALWAYS;
 import static android.widget.LinearLayout.VERTICAL;
 import static com.pdceng.www.desirepaths.Universals.chooseLocation;
 
@@ -89,19 +92,27 @@ public class PublicInputAddActivity extends AppCompatActivity implements AfterGe
         linearLayout.setOrientation(VERTICAL);
         linearLayout.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        final EditText titleEdit = new EditText(this);
+        final Spinner questionSpinner = new Spinner(this);
         final EditText snippetEdit = new EditText(this);
-        final Spinner spinner = new Spinner(this);
-        Button button = new Button(this);
-        button.setText(R.string.addButton);
-        button.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        final Spinner categorySpinner = new Spinner(this);
+        Button addButton = new Button(this);
+        addButton.setText(R.string.addButton);
+        addButton.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        titleEdit.setHint("Add a title");
-        titleEdit.setInputType(InputType.TYPE_TEXT_FLAG_IME_MULTI_LINE);
-        snippetEdit.setHint("Your message");
-        snippetEdit.setInputType(InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+        questionSpinner.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, Universals.PROJECT.getQuestions().toArray(new String[Universals.PROJECT.getQuestions().size()])));
+        snippetEdit.setHint("I think...");
+        snippetEdit.setInputType(InputType.TYPE_CLASS_TEXT |
+                InputType.TYPE_TEXT_FLAG_MULTI_LINE |
+                InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
+        InputFilter[] fArray = new InputFilter[1];
+        fArray[0] = new InputFilter.LengthFilter(maxLength);
+        snippetEdit.setFilters(fArray);
+        snippetEdit.setMaxLines(5);
+        snippetEdit.setScrollBarStyle(View.SCROLLBARS_INSIDE_INSET);
+        snippetEdit.setOverScrollMode(OVER_SCROLL_ALWAYS);
+        snippetEdit.canScrollHorizontally(View.SCROLL_AXIS_VERTICAL);
 
-        spinner.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, new String[]{"(Type)", "Positive", "Neutral", "Negative"}));
+        categorySpinner.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, new String[]{"(Category)", "Idea", "Comment", "Warning"}));
 
         //Close window 'button'
         ImageView closeWindow = createCloseWindowButton(cardView, topView);
@@ -110,14 +121,14 @@ public class PublicInputAddActivity extends AppCompatActivity implements AfterGe
 
         linearLayout.addView(relativeLayout);
 
-        linearLayout.addView(titleEdit);
+        linearLayout.addView(questionSpinner);
         linearLayout.addView(snippetEdit);
-        linearLayout.addView(spinner);
-        linearLayout.addView(button);
+        linearLayout.addView(categorySpinner);
+        linearLayout.addView(addButton);
 
         cardView.addView(linearLayout);
 
-        titleEdit.requestFocus();
+        questionSpinner.requestFocus();
         final InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         inputMethodManager.toggleSoftInputFromWindow(linearLayout.getApplicationWindowToken(), InputMethodManager.SHOW_IMPLICIT, 0);
 
@@ -130,7 +141,7 @@ public class PublicInputAddActivity extends AppCompatActivity implements AfterGe
         final Bitmap finalImageBitmap = imageBitmap;
         final SendImageFTP finalSendImageFTP = sendImageFTP;
 
-        button.setOnClickListener(new View.OnClickListener() {
+        addButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 //START: Check if all fields are filled
@@ -151,7 +162,7 @@ public class PublicInputAddActivity extends AppCompatActivity implements AfterGe
 //                            Toast.makeText(MapActivity.this, "Please complete all the fields", Toast.LENGTH_SHORT).show();
                             return;
                         }
-                    } else if (linearLayout.getChildAt(i) instanceof Spinner) {
+                    } else if (linearLayout.getChildAt(i) == categorySpinner) {
                         Spinner spinner = (Spinner) linearLayout.getChildAt(i);
                         if (spinner.getSelectedItemPosition() == 0) {
                             inputMethodManager.toggleSoftInputFromWindow(cardView.getApplicationWindowToken(), InputMethodManager.HIDE_IMPLICIT_ONLY, 0);
@@ -171,8 +182,8 @@ public class PublicInputAddActivity extends AppCompatActivity implements AfterGe
                 //END: Check if all fields are filled
 
                 //Remember field values
-                final String sentiment = spinner.getSelectedItem().toString().toLowerCase();
-                final String title = titleEdit.getText().toString();
+                final String sentiment = categorySpinner.getSelectedItem().toString().toLowerCase();
+                final String title = questionSpinner.getSelectedItem().toString();
                 final String snippet = snippetEdit.getText().toString();
 
                 System.out.println("Checking location...");
@@ -213,7 +224,8 @@ public class PublicInputAddActivity extends AppCompatActivity implements AfterGe
                                         bundle.putString(PIEntryTable.SENTIMENT, sentiment);
                                         bundle.putString(PIEntryTable.TITLE, title);
                                         bundle.putString(PIEntryTable.SNIPPET, snippet);
-                                        bundle.putString(PIEntryTable.USER, Universals.USER_NAME);
+                                        bundle.putString(PIEntryTable.SOCIAL_MEDIA_ID, Universals.SOCIAL_MEDIA_ID);
+                                        bundle.putString(PIEntryTable.PROJECT_ID, String.valueOf(Universals.PROJECT.getId()));
                                         bundle.putString(PIEntryTable.TIMESTAMP, new Timestamp(System.currentTimeMillis()).toString());
                                         dh.insert(bundle, new PIEntryTable());
                                         Toast.makeText(mContext, "Content added!", Toast.LENGTH_SHORT).show();

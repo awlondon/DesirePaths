@@ -41,7 +41,7 @@ public class CardsActivity extends AppCompatActivity {
 
 //        for(PublicInput publicInput : CardsUtils.loadPublicInputs(this.getApplicationContext())){
 //            mSwipeView.addView(new PublicInputCard(this, publicInput, mSwipeView));
-        PublicInput[] publicInputs = new DatabaseHelper(mContext).getAllPublicInput();
+        PublicInput[] publicInputs = new DatabaseHelper(mContext).getPublicInputByCurrentProject();
         try {
             if (publicInputs[0] != null) {
                 for (PublicInput publicInput : publicInputs) {
@@ -49,7 +49,7 @@ public class CardsActivity extends AppCompatActivity {
                 }
             }
         } catch (ArrayIndexOutOfBoundsException exception){
-            Toast.makeText(mContext, "You've rated all public input so far", Toast.LENGTH_SHORT).show();
+            Toast.makeText(mContext, "You've rated all available public input", Toast.LENGTH_SHORT).show();
             finish();
         }
     }

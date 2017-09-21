@@ -16,9 +16,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.sql.Timestamp;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Created by alondon on 8/3/2017.
@@ -40,10 +38,6 @@ public class CommentsAdapter extends BaseAdapter {
 
     Bundle userBundle;
     int ratingGiven;
-
-    TextView tvUser;
-    TextView tvComment;
-    TextView tvDate;
 
     Universals universals;
 
@@ -92,7 +86,9 @@ public class CommentsAdapter extends BaseAdapter {
 
 //        checkSync();
         bundle = dh.getRow(new CommentsTable(), CommentsTable.ID, id);
-        userBundle = dh.getRow(new UserTable(), UserTable.SOCIAL_MEDIA_ID, bundle.getString(CommentsTable.SOCIAL_MEDIA_ID));
+        String socialMediaID = bundle.getString(CommentsTable.SOCIAL_MEDIA_ID);
+        System.out.println("socialMediaId: " + socialMediaID);
+        userBundle = dh.getRow(new UserTable(), UserTable.SOCIAL_MEDIA_ID, socialMediaID);
 
         tvRating = (TextView) convertView.findViewById(R.id.rating);
         TextView tvUser = (TextView) convertView.findViewById(R.id.user);
@@ -102,7 +98,9 @@ public class CommentsAdapter extends BaseAdapter {
         tvRating.setText(bundle.getString(CommentsTable.RATING));
         tvComment.setText(bundle.getString(CommentsTable.COMMENT));
         tvUser.setText(userBundle.getString(UserTable.NAME));
-        tvDate.setText(getDuration(bundle.getString(CommentsTable.TIMESTAMP)));
+        tvDate.setText(Universals.getDuration(bundle.getString(CommentsTable.TIMESTAMP)));
+
+        tvDate.setTextSize(12);
 
         ImageButton ibUp = (ImageButton) convertView.findViewById(R.id.upArrow);
         ImageButton ibDown = (ImageButton) convertView.findViewById(R.id.downArrow);
@@ -111,7 +109,7 @@ public class CommentsAdapter extends BaseAdapter {
 
         new DownloadImageTask(ivProfile).execute(userBundle.getString(UserTable.PHOTO_URL));
 
-        ratingGiven = dh.checkRatingGiven(mData.get(position));
+        ratingGiven = dh.checkCommentRatingGiven(mData.get(position));
         switch (ratingGiven){
             case DatabaseHelper.NO_RATING_GIVEN:
                 ibDown.setAlpha(.5f);
@@ -156,66 +154,6 @@ public class CommentsAdapter extends BaseAdapter {
         ((CommentsAdapterInterface) mContext).setCommentsAdapter(bundle.getString(CommentsTable.PIEntry_ID));
     }
 
-    private String getDuration(String timestamp) {
-        //The variable constants below describe how many milliseconds (a millisecond = 1/1000 of a second) are in the given
-        //unit of time.
-        final long SECOND = 1_000;
-        final long MINUTE = 60_000;
-        final long HOUR = 3_600_000;
-        final long DAY = 86_400_000;
-        //The following variable constants describe how many days are in the given unit of time.
-        final int WEEK = 7;
-        final int MONTH = 30;
-        final int YEAR = 365;
-
-        //A timestamp is a java class that stores detailed time information.
-        //'postedTime' is a Timestamp value of the date argument to be compared.
-        //'now' is a Timestamp created from the system's current time.
-
-        Timestamp firstTime = new Timestamp(Long.valueOf(timestamp));
-        Timestamp lastTime = new Timestamp(System.currentTimeMillis());
-        //The following variables contain the millisecond and day difference between these two TimeStamps.
-        long compareToMillis = TimeUnit.MILLISECONDS.toMillis(lastTime.getTime() - firstTime.getTime());
-        long compareToDays = TimeUnit.MILLISECONDS.toDays(lastTime.getTime() - firstTime.getTime());
-        String result = null;
-
-//        Log.d("compareToMillis", String.valueOf(compareToMillis));
-//        Log.d("compareToDays", String.valueOf(compareToDays));
-
-        //This if/else routine finds the most appropriate description of the time between the date argument and now.
-        int value = 0;
-        if (compareToMillis < MINUTE) {
-            value = (int) (compareToMillis / SECOND);
-            if (value==1) result = value + " second";
-            else result = value + " seconds";
-        } else if (compareToMillis > MINUTE && compareToMillis < HOUR) {
-            value = (int) (compareToMillis / MINUTE);
-            if (value==1) result = value + " minute";
-            else result = value + " minutes";
-        } else if (compareToMillis > HOUR && compareToMillis < DAY) {
-            value = (int) (compareToMillis / HOUR);
-            if (value==1) result = value + " hour";
-            else result = value + " hours";
-        } else if (compareToMillis > DAY && compareToDays < WEEK) {
-            value = (int) (compareToMillis / DAY);
-            if (value==1) result = value + " day";
-            else result = value + " days";
-        } else if (compareToDays > WEEK && compareToDays < MONTH) {
-            value = (int) (compareToDays / WEEK);
-            if (value==1) result = value + " week";
-            else result = value + " weeks";
-        } else if (compareToDays > MONTH && compareToDays < YEAR) {
-            value = (int) (compareToDays / MONTH);
-            if (value==1) result = value + " month";
-            else result = value + " months";
-        } else if (compareToDays > YEAR) {
-            value = (int) (compareToDays / YEAR);
-            if (value==1) result = value + " year";
-            else result = value + " years";
-        }
-        return result + " ago";
-    }
-
     private void checkSync() {
         if (Universals.SYNCHRONIZING) {
             try {
@@ -236,7 +174,7 @@ public class CommentsAdapter extends BaseAdapter {
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            ivProfile.setImageBitmap(null);
+//            ivProfile.setImageBitmap(null);
         }
 
         protected Bitmap doInBackground(String... urls) {

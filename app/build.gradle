@@ -6,7 +6,7 @@ android {
     useLibrary 'org.apache.http.legacy'
     defaultConfig {
         applicationId "com.pdceng.www.desirepaths"
-        minSdkVersion 21
+        minSdkVersion 23
         targetSdkVersion 25
         versionCode 16
         versionName "4.2"

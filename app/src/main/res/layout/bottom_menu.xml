@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/menu"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_alignParentBottom="true"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginTop="@dimen/menu_margin_top"
+        android:background="@color/colorPrimaryDark"
+        android:orientation="horizontal"
+        android:padding="5dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:background="@color/colorPrimaryDarkest"
+            android:orientation="vertical">
+
+            <ToggleButton
+                android:id="@+id/addInputToggle"
+                style="@null"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/menu_button_height"
+                android:layout_marginEnd="@dimen/menu_button_margin_end"
+                android:layout_toEndOf="@+id/bCards"
+                android:background="@color/colorPrimaryDark"
+                android:drawableTop="@drawable/ic_add_location"
+                android:stateListAnimator="@null"
+                android:textOff=" "
+                android:textOn=" " />
+
+            <TextView
+                android:id="@+id/tvAdd"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@color/colorPrimaryDark"
+                android:gravity="center"
+                android:text="Add"
+                android:textColor="@color/white"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@color/colorPrimaryDarkest"
+            android:orientation="vertical">
+
+            <ImageButton
+                android:id="@+id/bCards"
+                style="@android:style/Widget.Material.ImageButton"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/menu_button_height"
+                android:layout_marginEnd="@dimen/menu_button_margin_end"
+                android:background="@color/colorPrimaryDark"
+                android:src="@drawable/ic_thumbs_up_down" />
+
+            <TextView
+                android:id="@+id/tvThumbs"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@color/colorPrimaryDark"
+                android:gravity="center"
+                android:text="Rate"
+                android:textColor="@color/white"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@color/colorPrimaryDarkest"
+            android:orientation="vertical">
+
+            <ToggleButton
+                android:id="@+id/filterToggle"
+                style="@null"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/menu_button_height"
+                android:layout_marginEnd="@dimen/menu_button_margin_end"
+                android:background="@color/colorPrimaryDark"
+                android:drawableTop="@drawable/ic_action_filter"
+                android:stateListAnimator="@null"
+                android:textOff=" "
+                android:textOn=" " />
+
+            <TextView
+                android:id="@+id/TvFilter"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@color/colorPrimaryDark"
+                android:gravity="center"
+                android:text="Filter"
+                android:textColor="@color/white"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@color/colorPrimaryDarkest"
+            android:orientation="vertical">
+
+            <ImageButton
+                android:id="@+id/help"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/menu_button_height"
+                android:layout_marginEnd="@dimen/menu_button_margin_end"
+                android:background="@color/colorPrimaryDark"
+                android:clickable="true"
+                android:elevation="0dp"
+                android:src="@android:drawable/ic_menu_help" />
+
+            <TextView
+                android:id="@+id/tvHelp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@color/colorPrimaryDark"
+                android:gravity="center"
+                android:text="Help"
+                android:textColor="@color/white"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@color/colorPrimaryDarkest"
+            android:orientation="vertical">
+
+            <ImageButton
+                android:id="@+id/info"
+                android:layout_width="70dp"
+                android:layout_height="@dimen/menu_button_height"
+                android:background="@color/colorPrimaryDark"
+                android:clickable="true"
+                android:elevation="0dp"
+                android:src="@drawable/ic_info" />
+
+            <TextView
+                android:id="@+id/tvInfo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@color/colorPrimaryDark"
+                android:gravity="center"
+                android:text="Info"
+                android:textColor="@color/white"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout>
