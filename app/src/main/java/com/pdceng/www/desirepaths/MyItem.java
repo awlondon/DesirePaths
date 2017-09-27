@@ -13,18 +13,18 @@ import java.sql.Timestamp;
  * Created by alondon on 7/24/2017.
  */
 
-public class MyItem implements ClusterItem {
+class MyItem implements ClusterItem {
+    private final LatLng mPosition;
+    private final String mTitle;
+    private final String mSnippet;
+    private final Integer mId;
     private Bundle mBundle;
     private PublicInput mPublicInput;
-    private LatLng mPosition;
-    private String mTitle;
-    private String mSnippet;
     private BitmapDescriptor mIcon;
     private String mBitmapUrlString;
     private String mSentiment;
     private String mUser;
     private Timestamp mTimestamp;
-    private Integer mId;
 
     MyItem(Bundle bundle) {
         mBundle = bundle;

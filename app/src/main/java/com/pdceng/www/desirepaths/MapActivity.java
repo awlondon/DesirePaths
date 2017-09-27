@@ -130,25 +130,24 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     private static int DEFAULT_ZOOM = 10;
     //    private final LatLng startingPoint = new LatLng(61.2185, -149.8996);
     private final LatLng startingPoint = new LatLng(64.836888, -147.773023);
+    private final List<LatLng> lls = new ArrayList<>();
+    private final Context mContext = this;
+    private final DatabaseHelper dh = new DatabaseHelper(this);
+    private final List<CameraPosition> previousCameraPositions = new ArrayList<>();
     public GoogleMap mMap;
     public FusedLocationProviderClient mFusedLocationClient;
-    List<LatLng> lls = new ArrayList<>();
-    Context mContext = this;
-    CommentsAdapter adapter;
-    ListView listView;
-    DatabaseHelper dh = new DatabaseHelper(this);
     ScheduledExecutorService executorService;
     Runnable getAllFromSQL;
     float translationY = 0;
     boolean noPicture = false;
     FragmentManager fragmentManager;
     FragmentTransaction fragmentTransaction;
-    RelativeLayout topView;
     LatLng mCurrLatLng;
-    SupportMapFragment mapFragment;
+    private CommentsAdapter adapter;
+    private ListView listView;
+    private RelativeLayout topView;
+    private SupportMapFragment mapFragment;
     private ClusterManager<MyItem> mClusterManager;
-    private HeatmapTileProvider mProvider;
-    private TileOverlay mOverlay;
     private boolean mLocationPermissionGranted;
     private Location mDefaultLocation;
     private Location mLastKnownLocation;
@@ -157,33 +156,26 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     private boolean mCameraPermissionGranted;
     private boolean mStoragePermissionGranted;
     private ImageView mImageView;
-    private Algorithm<MyItem> clusterManagerAlgorithm;
-    private List<CameraPosition> previousCameraPositions = new ArrayList<>();
     private CameraPosition tempCameraPosition;
     private FloatingActionButton prevMapFab;
     private boolean updateCameraMemory = true;
     private boolean permissionRequested = false;
     private CallbackManager callbackManager;
     private Uri imageUri;
-    private Universals universals;
-    private int animDur = 200;
     private int ivHeightSetting = 700;
+
+    public MapActivity() {
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
         topView = (RelativeLayout) findViewById(R.id.topView);
-        universals = new Universals(this);
+        Universals universals = new Universals(this);
         setClickListeners();
         bringUpMap();
         checkPermission();
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-//        getSupportFragmentManager().beginTransaction().remove(mapFragment).commit();
     }
 
     private void chooseProject(final GoogleMap googleMap) {
@@ -301,8 +293,9 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     }
 
     private void showProjectInfo() {
+        final ViewGroup viewGroup = null;
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        View view = LayoutInflater.from(getApplicationContext()).inflate(R.layout.project_info, null);
+        View view = LayoutInflater.from(getApplicationContext()).inflate(R.layout.project_info, viewGroup);
         builder.setView(view);
         TextView tvName = (TextView) view.findViewById(R.id.name);
         TextView tvLocation = (TextView) view.findViewById(R.id.location);
@@ -435,7 +428,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         }
     }
 
-    void establishMap(GoogleMap googleMap) {
+    private void establishMap(GoogleMap googleMap) {
         mMap = googleMap;
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(Universals.PROJECT.getLatLng(), Universals.PROJECT.getZoom()));
         mMap.setOnInfoWindowClickListener(this);
@@ -533,7 +526,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 //        runTutorial();
     }
 
-    void unCheckToggleButtons() {
+    private void unCheckToggleButtons() {
         ToggleButton tb = (ToggleButton) findViewById(R.id.filterToggle);
         ToggleButton tb2 = (ToggleButton) findViewById(R.id.addInputToggle);
         ToggleButton[] tbs = new ToggleButton[]{tb, tb2};
@@ -550,7 +543,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         Toast.makeText(MapActivity.this, marker.getPosition().toString(), Toast.LENGTH_SHORT).show();
     }
 
-    void openPublicInputView(final MyItem myItem) {
+    private void openPublicInputView(final MyItem myItem) {
         Intent intent = new Intent(this, PublicInputViewActivity.class);
         intent.putExtras(myItem.getBundle());
         startActivity(intent);
@@ -613,8 +606,8 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                 });
     }
 
-    public boolean setUpCluster() {
-        clusterManagerAlgorithm = new NonHierarchicalDistanceBasedAlgorithm<>();
+    public void setUpCluster() {
+        Algorithm<MyItem> clusterManagerAlgorithm = new NonHierarchicalDistanceBasedAlgorithm<>();
         mClusterManager.setAlgorithm(clusterManagerAlgorithm);
         mClusterManager.setRenderer(new OwnIconRendered(this, mMap, mClusterManager));
         mMap.setOnCameraIdleListener(mClusterManager);
@@ -623,7 +616,6 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
         Collection<MyItem> markers = clusterManagerAlgorithm.getItems();
 
-        return true;
     }
 
     void addItems(String... strings) {
@@ -673,11 +665,11 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         mClusterManager.cluster();
     }
 
-    void zoomOut(View view) {
+    private void zoomOut(View view) {
         mMap.moveCamera(CameraUpdateFactory.zoomOut());
     }
 
-    void zoomIn(View view) {
+    private void zoomIn(View view) {
         mMap.moveCamera(CameraUpdateFactory.zoomIn());
     }
 
@@ -696,11 +688,11 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         List<LatLng> list;
         list = lls;
 
-        mProvider = new HeatmapTileProvider.Builder()
+        HeatmapTileProvider mProvider = new HeatmapTileProvider.Builder()
                 .data(list)
                 .gradient(gradient)
                 .build();
-        mOverlay = mMap.addTileOverlay(new TileOverlayOptions().tileProvider(mProvider));
+        TileOverlay mOverlay = mMap.addTileOverlay(new TileOverlayOptions().tileProvider(mProvider));
     }
 
     private ArrayList<LatLng> readItems(int resource) throws JSONException {
@@ -717,7 +709,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         return list;
     }
 
-    void dispatchTakePictureIntent(View v) {
+    private void dispatchTakePictureIntent(View v) {
         if (checkPermission(Manifest.permission.CAMERA, mCameraPermissionGranted) > 0
                 && checkPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, mStoragePermissionGranted) > 0) {
             ContentValues values = new ContentValues();
@@ -734,7 +726,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         }
     }
 
-    void pickImageFromLibrary(View v) {
+    private void pickImageFromLibrary(View v) {
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
         intent.setType("image/*");
         startActivityForResult(intent, PICK_IMAGE);
@@ -813,7 +805,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         }
     }
 
-    void getLocation(View v) {
+    private void getLocation(View v) {
         System.out.println("getting current location!");
         if (checkPermission(Manifest.permission.ACCESS_FINE_LOCATION, mLocationPermissionGranted) > 0) {
             System.out.println("permission asked");
@@ -836,7 +828,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         }
     }
 
-    void moveToPreviousCameraPosition(View v) {
+    private void moveToPreviousCameraPosition(View v) {
         updateCameraMemory = false;
         previousCameraPositions.remove(previousCameraPositions.size() - 1);
         mMap.moveCamera(CameraUpdateFactory.newCameraPosition(previousCameraPositions.get(previousCameraPositions.size() - 1)));
@@ -878,8 +870,8 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         return previousCameraPositions.size() > 1;
     }
 
-    void toggleOptions(View v) {
-        LinearLayout ll;
+    private void toggleOptions(View v) {
+        LinearLayout ll = null;
         System.out.println("toggle options was called...");
         if (v instanceof ToggleButton) {
             System.out.println("view is instance of toggle button...");
@@ -894,6 +886,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                     }
                     ll = (LinearLayout) findViewById(R.id.llAddType);
             }
+            int animDur = 200;
             if (((ToggleButton) v).isChecked()) {
 
                 ll.setVisibility(View.VISIBLE);
@@ -954,7 +947,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         }
     }
 
-    void filterMarkers(View v) {
+    private void filterMarkers(View v) {
         if (v instanceof CheckBox) {
             CheckBox cbIdea = (CheckBox) findViewById(R.id.cbIdea);
             CheckBox cbComment = (CheckBox) findViewById(R.id.cbComment);
@@ -968,7 +961,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                 }
             }
             if (strings.size() == 0) {
-                addItems(null);
+                addItems(new String[]{null});
             } else {
                 String[] strs = new String[strings.size()];
                 strs = strings.toArray(strs);
@@ -977,7 +970,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         }
     }
 
-    void startCardsActivity(View v) {
+    private void startCardsActivity(View v) {
         Intent intent = new Intent(this, CardsActivity.class);
         startActivity(intent);
     }
@@ -1203,8 +1196,8 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     }
 
     private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
-        ImageView bmImage;
-        ProgressBar progressBar;
+        final ImageView bmImage;
+        final ProgressBar progressBar;
 
         DownloadImageTask(ImageView bmImage, ProgressBar progressBar) {
             this.bmImage = bmImage;
@@ -1265,9 +1258,9 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     }
 
     private class SendImageFTP extends AsyncTask<Void, Integer, String> {
-        Bitmap bitmap;
-        Context context;
-        String filename;
+        final Bitmap bitmap;
+        final Context context;
+        final String filename;
         ProgressDialog progressDialog;
 
         SendImageFTP(Bitmap bitmap, Context context) {

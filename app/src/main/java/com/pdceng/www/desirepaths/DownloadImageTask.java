@@ -6,10 +6,7 @@ import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Environment;
 import android.util.Log;
-import android.view.View;
 import android.webkit.URLUtil;
-import android.widget.ImageView;
-import android.widget.ProgressBar;
 
 import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
@@ -22,16 +19,11 @@ import java.io.IOException;
  * Created by alexlondon on 9/1/17.
  */
 
-public class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
-    Context context;
+class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
+    private final Context context;
 
     DownloadImageTask(Context context) {
         this.context = context;
-    }
-
-    @Override
-    protected void onPreExecute() {
-        super.onPreExecute();
     }
 
     protected Bitmap doInBackground(String... urls) {

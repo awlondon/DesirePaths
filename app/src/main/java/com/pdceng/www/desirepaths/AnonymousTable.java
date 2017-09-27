@@ -9,9 +9,9 @@ import java.util.List;
 
 public class AnonymousTable implements Table {
 
-    static final String ID = "_id";
     static final String ANONYMOUS_USER = "anonymous_user";
     static final String TABLE_NAME = "anonymous_table";
+    private static final String ID = "_id";
 
     @Override
     public List<String> getFields() {

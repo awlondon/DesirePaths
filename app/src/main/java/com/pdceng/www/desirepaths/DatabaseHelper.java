@@ -25,8 +25,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
-import static android.database.sqlite.SQLiteQueryBuilder.appendColumns;
-
 
 class DatabaseHelper extends SQLiteOpenHelper {
 
@@ -36,7 +34,7 @@ class DatabaseHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "adv_data.db";
     private static final int DATABASE_VERSION = 1;
     private static DatabaseHelper instance;
-    private Context mContext;
+    private final Context mContext;
 
     DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -49,9 +47,9 @@ class DatabaseHelper extends SQLiteOpenHelper {
         return instance;
     }
 
-    private synchronized static void appendClause(StringBuilder s, String name, String clause) {
+    private synchronized static void appendClause(StringBuilder s, String clause) {
         if (!TextUtils.isEmpty(clause)) {
-            s.append(name);
+            s.append(" WHERE ");
             s.append(clause);
         }
     }
@@ -79,7 +77,7 @@ class DatabaseHelper extends SQLiteOpenHelper {
         onCreate(db);
     }
 
-    synchronized long insert(Bundle bundle, Table table) {
+    synchronized void insert(Bundle bundle, Table table) {
         System.out.println("Starting insert!");
         SQLiteDatabase db = getWritableDatabase();
         ContentValues cv = new ContentValues();
@@ -94,8 +92,6 @@ class DatabaseHelper extends SQLiteOpenHelper {
         //start PHP
         String sql = insertSQLString(table.tableName(), table.nullColumnHack(), cv);
         postPHP(sql);
-
-        return result;
     }
 
     synchronized void setAnonymousUser() {
@@ -189,7 +185,7 @@ class DatabaseHelper extends SQLiteOpenHelper {
 //        Toast.makeText(mContext, "Synchronizing...", Toast.LENGTH_SHORT).show();
 
         for (Table table : tables) {
-            String sql = querySQLString(table.tableName(), null, null);
+            String sql = querySQLString(table.tableName());
             getJSONFromUrl(sql, afterGetAll);
         }
 //        Toast.makeText(mContext, "All data is loaded", Toast.LENGTH_SHORT).show();
@@ -358,7 +354,7 @@ class DatabaseHelper extends SQLiteOpenHelper {
         postPHP(sql);
     }
 
-    synchronized long adjustRating(boolean positive, String... commentId) {
+    synchronized void adjustRating(boolean positive, String... commentId) {
         String rating = getRow(new CommentsTable(), CommentsTable.ID, commentId[0]).getString(CommentsTable.RATING);
         String newRating = rating;
 
@@ -392,8 +388,6 @@ class DatabaseHelper extends SQLiteOpenHelper {
         postPHP(sql);
 
         updateCommentRatingGivenByUser(positive, commentId[0]);
-
-        return result;
     }
 
     synchronized int checkCommentRatingGiven(String commentId) {
@@ -651,20 +645,16 @@ class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     private synchronized String querySQLString(
-            String table, String[] columns, String where) {
+            String table) {
 
         StringBuilder query = new StringBuilder(120);
 
         query.append("SELECT ");
 
-        if (columns != null && columns.length != 0) {
-            appendColumns(query, columns);
-        } else {
-            query.append("* ");
-        }
+        query.append("* ");
         query.append("FROM ");
         query.append(table);
-        appendClause(query, " WHERE ", where);
+        appendClause(query, null);
 
         return query.toString();
     }
@@ -689,7 +679,7 @@ class DatabaseHelper extends SQLiteOpenHelper {
             i++;
         }
         if (!TextUtils.isEmpty(whereClause)) {
-            appendClause(sql, " WHERE ", whereClause);
+            appendClause(sql, whereClause);
         }
         return sql.toString();
     }
@@ -708,11 +698,6 @@ class DatabaseHelper extends SQLiteOpenHelper {
     private class PostPHP extends AsyncTask<String, Void, String> {
         private String finalResponse;
 
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-//            Toast.makeText(mContext, "Updating...", Toast.LENGTH_SHORT).show();
-        }
         @Override
         protected void onPostExecute(String httpResponseMsg) {
             super.onPostExecute(httpResponseMsg);
@@ -736,9 +721,9 @@ class DatabaseHelper extends SQLiteOpenHelper {
 
     //     JSON parse class started from here.
     private class GetJSONFromUrl extends AsyncTask<String, Void, String> {
+        final String httpUrl = "http://www.desirepaths.xyz/Get.php";
         public Context context;
         String JSONResult;
-        String httpUrl = "http://www.desirepaths.xyz/Get.php";
         AfterGetAll afterGetAll = null;
 
         GetJSONFromUrl() {
@@ -746,11 +731,6 @@ class DatabaseHelper extends SQLiteOpenHelper {
 
         GetJSONFromUrl(AfterGetAll afterGetAll) {
             this.afterGetAll = afterGetAll;
-        }
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
         }
 
         @Override

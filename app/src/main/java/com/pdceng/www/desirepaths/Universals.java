@@ -22,18 +22,18 @@ public class Universals {
     static final String IDEA = "idea";
     static final String COMMENT = "comment";
     static final String WARNING = "warning";
+    static final boolean SYNCHRONIZING = false;
     static boolean isAnon;
     static boolean prevMapTutorialWasShown;
     static String SOCIAL_MEDIA_ID;
     static String USER_NAME;
     static Project PROJECT;
-    static boolean SYNCHRONIZING = false;
     static Bitmap bitmapBeingProcessed;
     static boolean chooseLocation = false;
     static MapActivity mapActivity;
     private static LruCache<String, Bitmap> bitmapMemoryCache;
     private static Universals instance;
-    Context mContext;
+    private final Context mContext;
 
     public Universals(Context context) {
 
@@ -141,11 +141,11 @@ public class Universals {
         return null;
     }
 
-    static String addBitmapToMemoryCache(String key, Bitmap bitmap) {
+    static void addBitmapToMemoryCache(String key, Bitmap bitmap) {
         if (getBitmapFromMemoryCache(key) == null) {
             bitmapMemoryCache.put(key, bitmap);
         }
-        return key;
+//        return key;
     }
 
     static Bitmap getBitmapFromMemoryCache(String key) {
@@ -153,11 +153,7 @@ public class Universals {
     }
 
     static boolean isBitmapInMemoryCache(String key) {
-        if (key == null) {
-            return false;
-        } else {
-            return bitmapMemoryCache.get(key) != null;
-        }
+        return key != null && bitmapMemoryCache.get(key) != null;
     }
 
     static void sendBitmapForProcessing(Bitmap bitmap) {

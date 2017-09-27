@@ -34,9 +34,8 @@
                 android:textOn="@string/space" />
 
             <TextView
-                android:id="@+id/tvAdd"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="0dp"
                 android:layout_weight="1"
                 android:background="@color/colorPrimaryDark"
                 android:gravity="center"
@@ -63,7 +62,6 @@
                 android:src="@drawable/ic_thumbs_up_down" />
 
             <TextView
-                android:id="@+id/tvThumbs"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@color/colorPrimaryDark"
@@ -93,7 +91,6 @@
                 android:textOn="@string/space" />
 
             <TextView
-                android:id="@+id/TvFilter"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@color/colorPrimaryDark"
@@ -122,7 +119,6 @@
                 android:src="@android:drawable/ic_menu_help" />
 
             <TextView
-                android:id="@+id/tvHelp"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@color/colorPrimaryDark"
@@ -150,7 +146,6 @@
                 android:src="@drawable/ic_info" />
 
             <TextView
-                android:id="@+id/tvInfo"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@color/colorPrimaryDark"

@@ -16,20 +16,15 @@ import java.util.Map;
  * Created by Juned on 3/3/2017.
  */
 
-public class HttpParse {
+class HttpParse {
 
+    private final StringBuilder stringBuilder = new StringBuilder();
     private String FinalHttpData = "";
-    private String Result;
-    private BufferedWriter bufferedWriter;
-    private OutputStream outputStream;
-    private BufferedReader bufferedReader;
-    private StringBuilder stringBuilder = new StringBuilder();
-    private URL url;
 
     String postRequest(HashMap<String, String> Data, String HttpUrlHolder) {
 
         try {
-            url = new URL(HttpUrlHolder);
+            URL url = new URL(HttpUrlHolder);
 
             HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
 
@@ -49,9 +44,9 @@ public class HttpParse {
 
             httpURLConnection.setDoOutput(true);
 
-            outputStream = httpURLConnection.getOutputStream();
+            OutputStream outputStream = httpURLConnection.getOutputStream();
 
-            bufferedWriter = new BufferedWriter(new OutputStreamWriter(outputStream, "UTF-8"));
+            BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(outputStream, "UTF-8"));
 
             bufferedWriter.write(FinalDataParse(Data));
 
@@ -63,7 +58,7 @@ public class HttpParse {
 
             if (httpURLConnection.getResponseCode() != -1) {
 
-                bufferedReader = new BufferedReader(
+                BufferedReader bufferedReader = new BufferedReader(
                         new InputStreamReader(
                                 httpURLConnection.getInputStream()
                         )
@@ -93,8 +88,8 @@ public class HttpParse {
 
         }
 
-        Result = stringBuilder.toString();
+        String result = stringBuilder.toString();
 
-        return Result;
+        return result;
     }
 }

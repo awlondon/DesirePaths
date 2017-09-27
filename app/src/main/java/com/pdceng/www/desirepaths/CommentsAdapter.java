@@ -21,17 +21,11 @@ import java.util.List;
 
 class CommentsAdapter extends BaseAdapter {
     private static final int GET_BUNDLES_COMPLETE = 0;
-    Bundle bundle;
-    String id;
-    Universals universals;
-    private ImageView ivProfile;
-    private Bundle userBundle;
-    private TextView tvRating;
+    private Bundle bundle;
     private List<String> mData;
     private DatabaseHelper dh;
     private Context mContext;
     private LayoutInflater inflater = null;
-    private int ratingGiven;
 
 
 //    public CommentsAdapter(@NonNull Context context, @LayoutRes int resource, @NonNull List<Bundle> objects) {
@@ -44,7 +38,6 @@ class CommentsAdapter extends BaseAdapter {
         this.mData = mData;
         this.mContext = context;
         inflater = LayoutInflater.from(mContext);
-        universals = new Universals(mContext);
     }
 
     @Override
@@ -70,18 +63,20 @@ class CommentsAdapter extends BaseAdapter {
     @Override
     public View getView(final int position, @Nullable View convertView, @NonNull ViewGroup parent) {
 
+        final ViewGroup viewGroup = null;
+
         dh = new DatabaseHelper(mContext);
         if(convertView==null)
-            convertView = inflater.inflate(R.layout.comment,null);
+            convertView = inflater.inflate(R.layout.comment, viewGroup);
 
-        id = mData.get(position);
+        String id = mData.get(position);
 
         bundle = dh.getRow(new CommentsTable(), CommentsTable.ID, id);
         String socialMediaID = bundle.getString(CommentsTable.SOCIAL_MEDIA_ID);
         System.out.println("socialMediaId: " + socialMediaID);
-        userBundle = dh.getRow(new UserTable(), UserTable.SOCIAL_MEDIA_ID, socialMediaID);
+        Bundle userBundle = dh.getRow(new UserTable(), UserTable.SOCIAL_MEDIA_ID, socialMediaID);
 
-        tvRating = (TextView) convertView.findViewById(R.id.rating);
+        TextView tvRating = (TextView) convertView.findViewById(R.id.rating);
         TextView tvUser = (TextView) convertView.findViewById(R.id.user);
         TextView tvComment = (TextView) convertView.findViewById(R.id.comment);
         TextView tvDate = (TextView) convertView.findViewById(R.id.date);
@@ -96,11 +91,11 @@ class CommentsAdapter extends BaseAdapter {
         ImageButton ibUp = (ImageButton) convertView.findViewById(R.id.upArrow);
         ImageButton ibDown = (ImageButton) convertView.findViewById(R.id.downArrow);
 
-        ivProfile = (ImageView) convertView.findViewById(R.id.ivProfile);
+        ImageView ivProfile = (ImageView) convertView.findViewById(R.id.ivProfile);
 
         new DownloadImageTask(ivProfile).execute(userBundle.getString(UserTable.PHOTO_URL));
 
-        ratingGiven = dh.checkCommentRatingGiven(mData.get(position));
+        int ratingGiven = dh.checkCommentRatingGiven(mData.get(position));
         switch (ratingGiven){
             case DatabaseHelper.NO_RATING_GIVEN:
                 ibDown.setAlpha(.5f);
@@ -156,16 +151,10 @@ class CommentsAdapter extends BaseAdapter {
     }
 
     private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
-        ImageView bmImage;
+        final ImageView bmImage;
 
         DownloadImageTask(ImageView bmImage) {
             this.bmImage = bmImage;
-        }
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-//            ivProfile.setImageBitmap(null);
         }
 
         protected Bitmap doInBackground(String... urls) {

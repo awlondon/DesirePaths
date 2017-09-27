@@ -8,7 +8,6 @@ import java.util.List;
  */
 
 public class UserTable implements Table {
-    static final String ID = "_id";
     static final String SOCIAL_MEDIA_ID = "social_media_id";
     static final String PHOTO_URL = "photo_url";
     static final String NAME = "name";
@@ -18,6 +17,7 @@ public class UserTable implements Table {
     static final String PI_AGREE = "pi_agree";
     static final String PI_DISAGREE = "pi_disagree";
     static final String TABLE_NAME = "user_table";
+    private static final String ID = "_id";
 
     @Override
     public List<String> getFields() {

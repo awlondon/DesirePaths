@@ -62,7 +62,7 @@ public class CardsActivity extends AppCompatActivity {
         checkCount();
     }
 
-    public void checkCount(){
+    private void checkCount() {
         Log.d("Children",String.valueOf(mSwipeView.getChildCount()));
         if( mSwipeView.getChildCount()<=1){
             Toast.makeText(mContext, "Thank you for your input!", Toast.LENGTH_SHORT).show();

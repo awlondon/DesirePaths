@@ -46,8 +46,8 @@ import static android.widget.LinearLayout.VERTICAL;
 
 public class PublicInputAddActivity extends AppCompatActivity implements AfterGetAll {
 
-    private Context mContext = this;
-    private DatabaseHelper dh = new DatabaseHelper(this);
+    private final Context mContext = this;
+    private final DatabaseHelper dh = new DatabaseHelper(this);
     private boolean mLocationPermissionGranted;
     private LatLng mCurrLatLng;
 
@@ -271,9 +271,9 @@ public class PublicInputAddActivity extends AppCompatActivity implements AfterGe
     }
 
     class SendImageFTP extends AsyncTask<Void, Integer, String> {
-        Bitmap bitmap;
-        Context context;
-        String filename;
+        final Bitmap bitmap;
+        final Context context;
+        final String filename;
         ProgressDialog progressDialog;
 
         SendImageFTP(Bitmap bitmap, Context context) {

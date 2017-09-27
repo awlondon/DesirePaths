@@ -7,23 +7,10 @@
     <string name="parse_server_url">http://www.pdceng.com/</string>
     <string name="parse_app_id">AncFaiJunPalSol</string>
     <string name="addButton">Add</string>
-    <string name="noComments">There are no comments, yet</string>
     <string name="ftp_password">Bg1f1Kv9zwHL</string>
     <string name="ftp_username">u665689347</string>
-    <string name="google_cloud_messaging_server_api_key">AIzaSyC-SmjaxaeSR0q4XARkD8ZJSG2OENFurjo</string>
-    <string name="google_cloud_messaging_sender_id">107255467560</string>
-    <string name="google_sign_in_sha_1">4F:53:F6:F1:FE:03:BC:60:14:AC:00:79:0D:23:09:FC:AC:2B:06:24</string>
     <string name="OK">OK</string>
-    <string name="title_activity_nav_drawer">NavDrawerActivity</string>
 
-    <string name="navigation_drawer_open">Open navigation drawer</string>
-    <string name="navigation_drawer_close">Close navigation drawer</string>
-
-    <string name="action_settings">Settings</string>
-    <string name="title_activity_bottom_navigation">BottomNavigationActivity</string>
-    <string name="title_home">Home</string>
-    <string name="title_dashboard">Dashboard</string>
-    <string name="title_notifications">Notifications</string>
     <string name="add_from_camera">Add from camera</string>
     <string name="add_from_gallery">Add from gallery</string>
     <string name="add_text_only">Add text only</string>
@@ -43,4 +30,25 @@
     <string name="rate_module">rate module</string>
     <string name="post">POST</string>
     <string name="cancel">CANCEL</string>
+    <string name="reject">reject</string>
+    <string name="approve">approve</string>
+    <string name="main_image">main image</string>
+    <string name="icon">icon</string>
+    <string name="profile">profile</string>
+    <string name="rate_up">rate up</string>
+    <string name="rate_down">rate down</string>
+    <string name="username">username</string>
+    <string name="questions_being">Question being responded to</string>
+    <string name="hashes">##</string>
+    <string name="commentcomment">Comment...Comment...Comment...Comment...Comment...Comment...Comment...Comment...</string>
+    <string name="hashes_time_ago">## time ago</string>
+    <string name="project_name">Project Name</string>
+    <string name="city_state">City, State</string>
+    <string name="project_descrip">Project Description: Help craft a long-term vision for the Airport Way corridor that will be used as recommendations for future projects.</string>
+    <string name="website">Website</string>
+    <string name="desire_paths">Desire Paths</string>
+    <string name="interactive_pia">The interactive Public Involvement app</string>
+    <string name="enter_anon">Enter Anonymously</string>
+    <string name="agree">Agree</string>
+    <string name="disagree">Disagree</string>
 </resources>

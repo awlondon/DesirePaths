@@ -8,15 +8,15 @@ import java.util.List;
  * Created by alondon on 9/18/2017.
  */
 
-public class Project {
-    int id;
-    String name;
-    String location;
-    String description;
-    List<String> questions;
-    String website;
-    LatLng latLng;
-    int zoom;
+class Project {
+    private int id;
+    private String name;
+    private String location;
+    private String description;
+    private List<String> questions;
+    private String website;
+    private LatLng latLng;
+    private int zoom;
 
     public int getId() {
         return id;

@@ -51,13 +51,11 @@ import static android.view.View.OVER_SCROLL_ALWAYS;
 import static android.widget.LinearLayout.VERTICAL;
 
 public class PublicInputViewActivity extends AppCompatActivity implements AfterGetAll, CommentsAdapterInterface {
-    MyItem myItem;
-    ImageView mImageView;
-    private int ivHeightSetting = 700;
+    private final DatabaseHelper dh = new DatabaseHelper(this);
+    private final Context mContext = this;
+    private MyItem myItem;
+    private ImageView mImageView;
     private ListView listView;
-    private DatabaseHelper dh = new DatabaseHelper(this);
-    private CommentsAdapter adapter;
-    private Context mContext = this;
     private ImageButton ibRatingUp;
     private ImageButton ibRatingDown;
     private TextView tvRating;
@@ -106,6 +104,7 @@ public class PublicInputViewActivity extends AppCompatActivity implements AfterG
 
         //START: create ImageView
         mImageView = new ImageView(this);
+        int ivHeightSetting = 700;
         ViewGroup.LayoutParams ivParams = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ivHeightSetting);
         mImageView.setLayoutParams(ivParams);
         mImageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
@@ -424,7 +423,7 @@ public class PublicInputViewActivity extends AppCompatActivity implements AfterG
                     }
                 });
         List<String> commentIds = dh.getComments(id);
-        adapter = new CommentsAdapter(this, commentIds);
+        CommentsAdapter adapter = new CommentsAdapter(this, commentIds);
         listView.setAdapter(adapter);
         adapter.notifyDataSetChanged();
         listView.setAlpha(0f);
@@ -478,8 +477,8 @@ public class PublicInputViewActivity extends AppCompatActivity implements AfterG
     }
 
     private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
-        ImageView bmImage;
-        ProgressBar progressBar;
+        final ImageView bmImage;
+        final ProgressBar progressBar;
 
         DownloadImageTask(ImageView bmImage, ProgressBar progressBar) {
             this.bmImage = bmImage;

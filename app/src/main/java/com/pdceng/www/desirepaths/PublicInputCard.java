@@ -35,45 +35,36 @@ import java.util.Objects;
 @Layout(R.layout.card_view)
 class PublicInputCard {
 
+    private final PublicInput mPublicInput;
+    private final Context mContext;
+    private final SwipePlaceHolderView mSwipeView;
+    private final Bundle userBundle;
     @View(R.id.progressBar)
     private ProgressBar progressBar;
-
     @View(R.id.imageView)
     private ImageView publicInputImageView;
-
     @View(R.id.ivProfile)
     private ImageView ivProfile;
-
     @View(R.id.ivIcon)
     private ImageView ivIcon;
-
     @View(R.id.user)
     private TextView tvUser;
-
     @View(R.id.title)
     private TextView tvTitle;
-
     @View(R.id.snippet)
     private TextView tvSnippet;
-
-    private PublicInput mPublicInput;
-    private Context mContext;
-    private SwipePlaceHolderView mSwipeView;
-    private Universals universals;
-    private Bundle userBundle;
-    private DatabaseHelper dh;
 
     PublicInputCard(Context context, PublicInput publicInput, SwipePlaceHolderView swipeView) {
         mContext = context;
         mPublicInput = publicInput;
         mSwipeView = swipeView;
-        dh = new DatabaseHelper(mContext);
+        DatabaseHelper dh = new DatabaseHelper(mContext);
         userBundle = dh.getRow(new UserTable(), UserTable.SOCIAL_MEDIA_ID, mPublicInput.getSocialMediaId());
     }
 
     @Resolve
     private void onResolved(){
-        universals = new Universals(mContext);
+        Universals universals = new Universals(mContext);
         new DownloadImageTask(publicInputImageView).execute(mPublicInput.getUrl());
         new DownloadImageTask(ivProfile).execute(userBundle.getString(UserTable.PHOTO_URL));
         tvUser.setText(userBundle.getString(UserTable.NAME));
@@ -132,7 +123,7 @@ class PublicInputCard {
     }
 
     private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
-        ImageView bmImage;
+        final ImageView bmImage;
 
         DownloadImageTask(ImageView bmImage) {
             this.bmImage = bmImage;

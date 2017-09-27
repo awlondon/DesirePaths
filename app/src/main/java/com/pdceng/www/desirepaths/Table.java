@@ -6,7 +6,7 @@ import java.util.List;
  * Created by alondon on 5/4/2017.
  */
 
-public interface Table {
+interface Table {
     List<String> getFields();
     String tableName();
     String nullColumnHack();

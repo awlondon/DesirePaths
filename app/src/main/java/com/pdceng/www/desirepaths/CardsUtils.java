@@ -18,7 +18,7 @@ import java.util.List;
  * Created by alondon on 7/27/2017.
  */
 
-public class CardsUtils {
+class CardsUtils {
 
     private static final String TAG = "Utils";
 
@@ -26,7 +26,7 @@ public class CardsUtils {
         try{
             GsonBuilder builder = new GsonBuilder();
             Gson gson = builder.create();
-            JSONArray array = new JSONArray(loadJSONFromAsset(context, "public_input.json"));
+            JSONArray array = new JSONArray(loadJSONFromAsset(context));
             List<PublicInput> publicInputList = new ArrayList<>();
             for(int i=0;i<array.length();i++){
                 PublicInput publicInput = gson.fromJson(array.getString(i), PublicInput.class);
@@ -39,13 +39,13 @@ public class CardsUtils {
         }
     }
 
-    private static String loadJSONFromAsset(Context context, String jsonFileName) {
+    private static String loadJSONFromAsset(Context context) {
         String json = null;
         InputStream is=null;
         try {
             AssetManager manager = context.getAssets();
-            Log.d(TAG,"path "+jsonFileName);
-            is = manager.open(jsonFileName);
+            Log.d(TAG, "path " + "public_input.json");
+            is = manager.open("public_input.json");
             int size = is.available();
             byte[] buffer = new byte[size];
             is.read(buffer);

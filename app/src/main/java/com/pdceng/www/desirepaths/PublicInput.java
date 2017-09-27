@@ -15,45 +15,35 @@ import java.util.concurrent.ExecutionException;
 
 public class PublicInput {
 
+    private final Context context;
     private String ID;
-
     @SerializedName("url")
     @Expose
     private String url;
-
     @SerializedName("title")
     @Expose
     private String title;
-
     @SerializedName("snippet")
     @Expose
     private String snippet;
-
     @SerializedName("sentiment")
     @Expose
     private String sentiment;
-
     @SerializedName("latitude")
     @Expose
     private double latitude;
-
     @SerializedName("longitude")
     @Expose
     private double longitude;
-
     @SerializedName("socialMediaId")
     @Expose
     private String socialMediaId;
-
     @SerializedName("timestamp")
     @Expose
     private String timestamp;
-
     @SerializedName("project_id")
     @Expose
     private int project_id;
-
-    private Context context;
 
 
     public PublicInput(Context context) {
@@ -144,9 +134,8 @@ public class PublicInput {
     public Bitmap getBitmap() throws ExecutionException, InterruptedException {
         DownloadImageTask downloadImageTask = new DownloadImageTask(context);
         downloadImageTask.execute(url);
-        Bitmap bitmap = downloadImageTask.get();
-//        bitmap = Universals.sampleBitmap(bitmap);
-        return bitmap;
+        //        bitmap = Universals.sampleBitmap(bitmap);
+        return downloadImageTask.get();
 
     }
 }

@@ -27,18 +27,13 @@ import java.io.InputStreamReader;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 
-public class HttpServicesClass {
-    public int responseCode;
-
-    public String message;
-
-    public String response;
-
-    public ArrayList<NameValuePair> ArrayListParams;
-
-    public ArrayList<NameValuePair> headers;
-
-    public String UrlHolder;
+class HttpServicesClass {
+    private final ArrayList<NameValuePair> ArrayListParams;
+    private final ArrayList<NameValuePair> headers;
+    private int responseCode;
+    private String message;
+    private String response;
+    private String UrlHolder;
 
     public HttpServicesClass(String url) {
         HttpServicesClass.this.UrlHolder = url;

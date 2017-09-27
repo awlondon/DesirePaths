@@ -42,13 +42,15 @@ import java.util.Arrays;
 
 public class LoginActivity extends FragmentActivity implements AfterGetAll, GoogleApiClient.ConnectionCallbacks {
     private static final int RC_SIGN_IN = 12;
-    String name, social_media_id, photo_url;
-    Bundle parameters;
-    LoginButton login_button;
-    Button bAnon;
-    DatabaseHelper dh = new DatabaseHelper(this);
-    GoogleApiClient mGoogleApiClient;
-    Context mContext = this;
+    private final DatabaseHelper dh = new DatabaseHelper(this);
+    private final Context mContext = this;
+    private String name;
+    private String social_media_id;
+    private String photo_url;
+    private Bundle parameters;
+    private LoginButton login_button;
+    private Button bAnon;
+    private GoogleApiClient mGoogleApiClient;
     private CallbackManager callbackManager;
 
     @Override
@@ -194,7 +196,7 @@ public class LoginActivity extends FragmentActivity implements AfterGetAll, Goog
         }
     }
 
-    boolean checkUser() {
+    private void checkUser() {
         if (dh.isUser(social_media_id)) {
             System.out.println("User is found!");
             Universals.SOCIAL_MEDIA_ID = social_media_id;
@@ -215,7 +217,6 @@ public class LoginActivity extends FragmentActivity implements AfterGetAll, Goog
         Universals.isAnon = false;
         Intent intent = new Intent(this,MapActivity.class);
         startActivity(intent);
-        return true;
     }
 
     private void googleSignIn() {

@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/white"
-    android:orientation="horizontal">
+    android:orientation="horizontal"
+    tools:ignore="Overdraw">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -15,7 +17,6 @@
         android:background="@drawable/comment_gradient">
 
         <LinearLayout
-            android:id="@+id/ratingLayout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/card_margin"
@@ -28,6 +29,7 @@
                 android:layout_height="wrap_content"
                 android:adjustViewBounds="false"
                 android:background="@null"
+                android:contentDescription="@string/rate_up"
                 android:foregroundTintMode="screen"
                 android:scaleType="centerCrop"
                 android:src="@drawable/ic_rate_up" />
@@ -36,13 +38,14 @@
                 android:id="@+id/rating"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="##" />
+                android:text="@string/hashes" />
 
             <ImageButton
                 android:id="@+id/downArrow"
                 android:layout_width="@dimen/arrow_size"
                 android:layout_height="wrap_content"
                 android:background="@null"
+                android:contentDescription="@string/rate_down"
                 android:scaleType="centerCrop"
                 android:src="@drawable/ic_rate_down" />
         </LinearLayout>
@@ -51,7 +54,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="10dp"
-            android:layout_marginRight="10dp"
+            android:layout_marginEnd="10dp"
             android:layout_marginTop="10dp"
             android:orientation="vertical">
 
@@ -59,12 +62,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="10dp"
-                android:orientation="horizontal">
+                android:orientation="horizontal"
+                tools:ignore="UseCompoundDrawables">
 
                 <ImageView
                     android:id="@+id/ivProfile"
                     android:layout_width="30dp"
                     android:layout_height="30dp"
+                    android:contentDescription="@string/profile"
                     app:srcCompat="@drawable/com_facebook_profile_picture_blank_square" />
 
                 <TextView
@@ -74,7 +79,7 @@
                     android:layout_gravity="center_vertical"
                     android:layout_marginStart="10dp"
                     android:gravity="center_vertical"
-                    android:text="username"
+                    android:text="@string/username"
                     android:textStyle="bold|italic" />
 
             </LinearLayout>
@@ -83,7 +88,7 @@
                 android:id="@+id/comment"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Comment...Comment...Comment...Comment...Comment...Comment...Comment...Comment..." />
+                android:text="@string/commentcomment" />
 
             <TextView
                 android:id="@+id/date"
@@ -91,7 +96,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="end"
                 android:layout_marginTop="@dimen/card_margin"
-                android:text="## time ago"
+                android:text="@string/hashes_time_ago"
                 android:textStyle="italic" />
         </LinearLayout>
     </LinearLayout>
