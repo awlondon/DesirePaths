@@ -2,18 +2,13 @@
     xmlns:map="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
-
-    <RelativeLayout
-        android:id="@+id/topView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
-        android:elevation="0dp">
+    android:layout_height="match_parent"
+    android:layout_alignParentStart="true"
+    android:layout_alignParentTop="true"
+    android:elevation="0dp">
         <fragment
             android:id="@+id/map"
-            android:name="com.google.android.gms.maps.SupportMapFragment"
+            class="com.google.android.gms.maps.SupportMapFragment"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_alignParentStart="true"
@@ -64,22 +59,115 @@
             android:layout_above="@id/menu"
             android:layout_alignParentEnd="true" />
 
-        <include
-            android:id="@+id/addType"
-            layout="@layout/add_type"
+    <LinearLayout
+        android:id="@+id/llAddType"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_above="@id/menu"
-            android:layout_margin="10dp" />
+        android:layout_margin="10dp"
+        android:clickable="true"
+        android:orientation="vertical"
+        android:padding="5dp"
+        android:visibility="invisible">
 
-        <ImageView
-            android:id="@+id/addArrow"
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <android.support.design.widget.FloatingActionButton
+                android:id="@+id/addInputOnly"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="3dp"
+                android:layout_weight="1"
+                android:backgroundTint="@color/darkGrey"
+                android:clickable="true"
+                android:src="@drawable/ic_add_note"
+                map:fabSize="mini" />
+
+            <TextView
+                android:id="@+id/textView3"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_margin="@dimen/card_margin"
+                android:layout_weight="1"
+                android:background="@drawable/rounded_corners"
+                android:gravity="center_vertical"
+                android:text="@string/add_text_only"
+                android:textAppearance="@style/TextAppearance.AppCompat" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal">
+
+            <android.support.design.widget.FloatingActionButton
+                android:id="@+id/fromLibrary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="3dp"
+                android:backgroundTint="@color/darkGrey"
+                android:clickable="true"
+                android:src="@drawable/ic_add_photo_library"
+                android:visibility="visible"
+                map:fabSize="mini" />
+
+            <TextView
+                android:id="@+id/textView4"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_margin="@dimen/card_margin"
+                android:background="@drawable/rounded_corners"
+                android:gravity="center_vertical"
+                android:text="@string/add_from_gallery"
+                android:textAppearance="@style/TextAppearance.AppCompat" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <android.support.design.widget.FloatingActionButton
+                android:id="@+id/takePhoto"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="3dp"
+                android:layout_weight="1"
+                android:backgroundTint="@color/darkGrey"
+                android:clickable="true"
+                android:src="@drawable/ic_add_photo_camera"
+                android:visibility="visible"
+                map:fabSize="mini" />
+
+            <TextView
+                android:id="@+id/textView5"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_margin="@dimen/card_margin"
+                android:layout_weight="1"
+                android:background="@drawable/rounded_corners"
+                android:gravity="center_vertical"
+                android:text="@string/add_from_camera"
+                android:textAppearance="@style/TextAppearance.AppCompat"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <ImageView
+        android:id="@+id/addArrow"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
             android:layout_above="@id/menu"
             android:layout_marginStart="20dp"
-            android:visibility="invisible"
-            map:srcCompat="@drawable/arrow_down" />
+        android:contentDescription="@string/add_arrow"
+        android:src="@drawable/arrow_down"
+        android:visibility="invisible" />
 
         <ImageView
             android:id="@+id/thumbsArrow"
@@ -87,8 +175,9 @@
             android:layout_height="wrap_content"
             android:layout_above="@+id/menu"
             android:layout_marginStart="95dp"
-            android:visibility="invisible"
-            map:srcCompat="@drawable/arrow_down" />
+            android:contentDescription="@string/thumbs_arrow"
+            android:src="@drawable/arrow_down"
+            android:visibility="invisible" />
 
         <LinearLayout
             android:id="@+id/llFilter"
@@ -108,14 +197,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:checked="true"
-                android:text="Ideas" />
+                android:text="@string/ideas" />
 
             <CheckBox
                 android:id="@+id/cbComment"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:checked="true"
-                android:text="Comments" />
+                android:text="@string/comments" />
 
             <CheckBox
                 android:id="@+id/cbWarning"
@@ -123,21 +212,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:checked="true"
-                android:text="Warnings" />
+                android:text="@string/warnings" />
         </LinearLayout>
-
-    </RelativeLayout>
-
-    <ImageView
-        android:id="@+id/arrow"
-        android:layout_width="200dp"
-        android:layout_height="100dp"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
-        android:layout_marginStart="68dp"
-        android:layout_marginTop="17dp"
-        android:scaleType="fitXY"
-        android:visibility="invisible"
-        map:srcCompat="@drawable/arrow_curved" />
 
 </RelativeLayout>

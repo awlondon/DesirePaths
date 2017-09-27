@@ -25,7 +25,6 @@
             android:backgroundTint="@color/darkGrey"
             android:clickable="true"
             android:src="@drawable/ic_add_note"
-            android:visibility="visible"
             app:fabSize="mini" />
 
         <TextView
@@ -36,14 +35,14 @@
             android:layout_weight="1"
             android:background="@drawable/rounded_corners"
             android:gravity="center_vertical"
-            android:text="Add text only"
+            android:text="@string/add_text_only"
             android:textAppearance="@style/TextAppearance.AppCompat" />
 
     </LinearLayout>
 
     <LinearLayout
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
         android:layout_weight="1"
         android:orientation="horizontal">
 
@@ -52,7 +51,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="3dp"
-            android:layout_weight="1"
             android:backgroundTint="@color/darkGrey"
             android:clickable="true"
             android:src="@drawable/ic_add_photo_library"
@@ -64,10 +62,9 @@
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_margin="@dimen/card_margin"
-            android:layout_weight="1"
             android:background="@drawable/rounded_corners"
             android:gravity="center_vertical"
-            android:text="Add from gallery"
+            android:text="@string/add_from_gallery"
             android:textAppearance="@style/TextAppearance.AppCompat" />
     </LinearLayout>
 
@@ -96,8 +93,7 @@
             android:layout_weight="1"
             android:background="@drawable/rounded_corners"
             android:gravity="center_vertical"
-            android:text="Add from camera"
-            android:textAlignment="textStart"
+            android:text="@string/add_from_camera"
             android:textAppearance="@style/TextAppearance.AppCompat"
             android:textSize="14sp" />
     </LinearLayout>

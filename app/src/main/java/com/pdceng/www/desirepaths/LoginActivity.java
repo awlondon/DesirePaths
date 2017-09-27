@@ -6,6 +6,8 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.Signature;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.FragmentActivity;
 import android.util.Base64;
 import android.util.Log;
@@ -17,7 +19,6 @@ import com.facebook.AccessToken;
 import com.facebook.CallbackManager;
 import com.facebook.FacebookCallback;
 import com.facebook.FacebookException;
-import com.facebook.FacebookSdk;
 import com.facebook.GraphRequest;
 import com.facebook.GraphResponse;
 import com.facebook.login.LoginResult;
@@ -26,6 +27,7 @@ import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.auth.api.signin.GoogleSignInResult;
+import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.common.api.GoogleApiClient;
 
@@ -37,11 +39,8 @@ import java.security.NoSuchAlgorithmException;
 import java.sql.Timestamp;
 import java.util.Arrays;
 
-/**
- * Created by alondon on 8/8/2017.
- */
 
-public class LoginActivity extends FragmentActivity implements AfterGetAll {
+public class LoginActivity extends FragmentActivity implements AfterGetAll, GoogleApiClient.ConnectionCallbacks {
     private static final int RC_SIGN_IN = 12;
     String name, social_media_id, photo_url;
     Bundle parameters;
@@ -63,6 +62,7 @@ public class LoginActivity extends FragmentActivity implements AfterGetAll {
             public void onClick(View v) {
 //                Universals.isAnon = true;
                 dh.setAnonymousUser();
+                dh.getAllFromSQL((AfterGetAll) mContext);
                 Intent intent = new Intent(mContext, MapActivity.class);
                 startActivity(intent);
             }
@@ -80,7 +80,7 @@ public class LoginActivity extends FragmentActivity implements AfterGetAll {
 
         }
 
-        FacebookSdk.sdkInitialize(this.getApplicationContext());
+//        FacebookSdk.sdkInitialize(this.getApplicationContext());
         callbackManager = CallbackManager.Factory.create();
 
         login_button = (LoginButton) findViewById(R.id.facebook_button);
@@ -141,11 +141,17 @@ public class LoginActivity extends FragmentActivity implements AfterGetAll {
         }
 
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestEmail()
+                .requestEmail().requestIdToken(this.getString(R.string.default_web_client_id))
                 .build();
 
         mGoogleApiClient = new GoogleApiClient.Builder(this)
-                .enableAutoManage(this, null)
+                .addConnectionCallbacks(this)
+                .enableAutoManage(this, new GoogleApiClient.OnConnectionFailedListener() {
+                    @Override
+                    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+                        System.out.println(connectionResult.getErrorMessage());
+                    }
+                })
                 .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
                 .build();
 
@@ -176,12 +182,13 @@ public class LoginActivity extends FragmentActivity implements AfterGetAll {
         if (result.isSuccess()) {
             Toast.makeText(this, "Sign in success", Toast.LENGTH_SHORT).show();
             GoogleSignInAccount acct = result.getSignInAccount();
-            name = acct.getGivenName() + " " + acct.getFamilyName();
+            name = (acct != null ? acct.getGivenName() : null) + " " + acct.getFamilyName();
             social_media_id = acct.getId();
             photo_url = acct.getPhotoUrl().toString();
             checkUser();
         } else {
             Toast.makeText(this, "Could not sign-in! Try again, or enter anonymously", Toast.LENGTH_SHORT).show();
+            System.out.println("Error: " + result.getStatus().toString());
 //            Intent intent = new Intent(this,MapActivity.class);
 //            startActivity(intent);
         }
@@ -204,6 +211,7 @@ public class LoginActivity extends FragmentActivity implements AfterGetAll {
             Universals.USER_NAME = name;
         }
 
+        dh.getAllFromSQL(this);
         Universals.isAnon = false;
         Intent intent = new Intent(this,MapActivity.class);
         startActivity(intent);
@@ -218,5 +226,15 @@ public class LoginActivity extends FragmentActivity implements AfterGetAll {
     @Override
     public void afterGetAll() {
 //        Toast.makeText(this, "Data loaded successfully", Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onConnected(@Nullable Bundle bundle) {
+
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+
     }
 }

@@ -18,28 +18,20 @@ import android.widget.Toast;
 
 import java.util.List;
 
-/**
- * Created by alondon on 8/3/2017.
- */
 
-public class CommentsAdapter extends BaseAdapter {
+class CommentsAdapter extends BaseAdapter {
     private static final int GET_BUNDLES_COMPLETE = 0;
-
-    TextView tvRating;
     Bundle bundle;
-
-    List<String> mData;
-    DatabaseHelper dh;
-
-    Context mContext;
-    LayoutInflater inflater=null;
     String id;
-    ImageView ivProfile;
-
-    Bundle userBundle;
-    int ratingGiven;
-
     Universals universals;
+    private ImageView ivProfile;
+    private Bundle userBundle;
+    private TextView tvRating;
+    private List<String> mData;
+    private DatabaseHelper dh;
+    private Context mContext;
+    private LayoutInflater inflater = null;
+    private int ratingGiven;
 
 
 //    public CommentsAdapter(@NonNull Context context, @LayoutRes int resource, @NonNull List<Bundle> objects) {
@@ -47,7 +39,7 @@ public class CommentsAdapter extends BaseAdapter {
 //        layoutResource = resource;
 //    }
 
-    public CommentsAdapter(Context context, List<String> mData){
+    CommentsAdapter(Context context, List<String> mData) {
         super();
         this.mData = mData;
         this.mContext = context;
@@ -84,7 +76,6 @@ public class CommentsAdapter extends BaseAdapter {
 
         id = mData.get(position);
 
-//        checkSync();
         bundle = dh.getRow(new CommentsTable(), CommentsTable.ID, id);
         String socialMediaID = bundle.getString(CommentsTable.SOCIAL_MEDIA_ID);
         System.out.println("socialMediaId: " + socialMediaID);
@@ -180,7 +171,7 @@ public class CommentsAdapter extends BaseAdapter {
         protected Bitmap doInBackground(String... urls) {
             String urlDisplay = urls[0];
             System.out.println(urlDisplay);
-            Bitmap bitmap = null;
+            Bitmap bitmap;
             if (urlDisplay == null || !URLUtil.isValidUrl(urlDisplay)) {
                 return null;
             } else {
@@ -193,11 +184,19 @@ public class CommentsAdapter extends BaseAdapter {
         }
 
         protected void onPostExecute(Bitmap result) {
-            bmImage.setAlpha(0f);
-            bmImage.setImageBitmap(result);
-            bmImage.animate()
-                    .setDuration(500)
-                    .alphaBy(1f);
+            if (result != null) {
+                bmImage.setAlpha(0f);
+                bmImage.setImageBitmap(result);
+                bmImage.animate()
+                        .setDuration(500)
+                        .alphaBy(1f);
+            } else {
+                bmImage.setAlpha(0f);
+                bmImage.setImageResource(R.drawable.com_facebook_profile_picture_blank_square);
+                bmImage.animate()
+                        .setDuration(500)
+                        .alphaBy(1f);
+            }
         }
     }
 }

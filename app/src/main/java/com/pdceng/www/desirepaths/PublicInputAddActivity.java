@@ -43,7 +43,6 @@ import static android.R.attr.maxLength;
 import static android.graphics.Color.LTGRAY;
 import static android.view.View.OVER_SCROLL_ALWAYS;
 import static android.widget.LinearLayout.VERTICAL;
-import static com.pdceng.www.desirepaths.Universals.chooseLocation;
 
 public class PublicInputAddActivity extends AppCompatActivity implements AfterGetAll {
 
@@ -212,7 +211,13 @@ public class PublicInputAddActivity extends AppCompatActivity implements AfterGe
                                     System.out.println("location is known...");
                                     mCurrLatLng = new LatLng(location.getLatitude(), location.getLongitude());
                                     Universals.mapActivity.mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(mCurrLatLng, 15));
-                                    if (chooseLocation) {
+                                    if (Math.abs(mCurrLatLng.latitude - Universals.PROJECT.getLatLng().latitude) > 0.3f ||
+                                            Math.abs(mCurrLatLng.longitude - Universals.PROJECT.getLatLng().longitude) > 0.3f) {
+                                        Universals.mapActivity.mCurrLatLng = Universals.PROJECT.getLatLng();
+                                        Universals.mapActivity.mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(Universals.mapActivity.mCurrLatLng, 15));
+                                        Universals.setChooseLocation(true);
+                                    }
+                                    if (Universals.chooseLocation) {
                                         System.out.println("asking to choose location...");
                                         Universals.mapActivity.chooseLocationExec(true, title, snippet, sentiment, finalImageBitmap, finalSendImageFTP, (Activity) mContext);
                                     } else {

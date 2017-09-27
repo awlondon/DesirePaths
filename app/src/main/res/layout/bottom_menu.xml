@@ -9,9 +9,9 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
         android:layout_marginTop="@dimen/menu_margin_top"
         android:background="@color/colorPrimaryDark"
+        android:baselineAligned="false"
         android:orientation="horizontal"
         android:padding="5dp">
 
@@ -27,12 +27,11 @@
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/menu_button_height"
                 android:layout_marginEnd="@dimen/menu_button_margin_end"
-                android:layout_toEndOf="@+id/bCards"
                 android:background="@color/colorPrimaryDark"
                 android:drawableTop="@drawable/ic_add_location"
                 android:stateListAnimator="@null"
-                android:textOff=" "
-                android:textOn=" " />
+                android:textOff="@string/space"
+                android:textOn="@string/space" />
 
             <TextView
                 android:id="@+id/tvAdd"
@@ -41,9 +40,9 @@
                 android:layout_weight="1"
                 android:background="@color/colorPrimaryDark"
                 android:gravity="center"
-                android:text="Add"
+                android:text="@string/add"
                 android:textColor="@color/white"
-                android:textSize="10sp" />
+                android:textSize="12sp" />
         </LinearLayout>
 
         <LinearLayout
@@ -60,18 +59,18 @@
                 android:layout_height="@dimen/menu_button_height"
                 android:layout_marginEnd="@dimen/menu_button_margin_end"
                 android:background="@color/colorPrimaryDark"
+                android:contentDescription="@string/rate_module"
                 android:src="@drawable/ic_thumbs_up_down" />
 
             <TextView
                 android:id="@+id/tvThumbs"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:background="@color/colorPrimaryDark"
                 android:gravity="center"
-                android:text="Rate"
+                android:text="@string/rate"
                 android:textColor="@color/white"
-                android:textSize="10sp" />
+                android:textSize="12sp" />
         </LinearLayout>
 
         <LinearLayout
@@ -90,19 +89,18 @@
                 android:background="@color/colorPrimaryDark"
                 android:drawableTop="@drawable/ic_action_filter"
                 android:stateListAnimator="@null"
-                android:textOff=" "
-                android:textOn=" " />
+                android:textOff="@string/space"
+                android:textOn="@string/space" />
 
             <TextView
                 android:id="@+id/TvFilter"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:background="@color/colorPrimaryDark"
                 android:gravity="center"
-                android:text="Filter"
+                android:text="@string/filter"
                 android:textColor="@color/white"
-                android:textSize="10sp" />
+                android:textSize="12sp" />
         </LinearLayout>
 
         <LinearLayout
@@ -119,6 +117,7 @@
                 android:layout_marginEnd="@dimen/menu_button_margin_end"
                 android:background="@color/colorPrimaryDark"
                 android:clickable="true"
+                android:contentDescription="@string/help"
                 android:elevation="0dp"
                 android:src="@android:drawable/ic_menu_help" />
 
@@ -126,12 +125,11 @@
                 android:id="@+id/tvHelp"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:background="@color/colorPrimaryDark"
                 android:gravity="center"
-                android:text="Help"
+                android:text="@string/help"
                 android:textColor="@color/white"
-                android:textSize="10sp" />
+                android:textSize="12sp" />
         </LinearLayout>
 
         <LinearLayout
@@ -147,6 +145,7 @@
                 android:layout_height="@dimen/menu_button_height"
                 android:background="@color/colorPrimaryDark"
                 android:clickable="true"
+                android:contentDescription="@string/info"
                 android:elevation="0dp"
                 android:src="@drawable/ic_info" />
 
@@ -154,12 +153,11 @@
                 android:id="@+id/tvInfo"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:background="@color/colorPrimaryDark"
                 android:gravity="center"
-                android:text="Info"
+                android:text="@string/info"
                 android:textColor="@color/white"
-                android:textSize="10sp" />
+                android:textSize="12sp" />
         </LinearLayout>
 
     </LinearLayout>

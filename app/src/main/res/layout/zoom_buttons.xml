@@ -2,33 +2,29 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:gravity="end"
     android:orientation="vertical">
 
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:gravity="end">
-
-        <ImageButton
+    <ImageButton
             android:id="@+id/zoomOut"
             style="@style/Widget.AppCompat.ImageButton"
-            android:layout_width="50dp"
+        android:layout_width="50dp"
             android:layout_height="50dp"
             android:layout_marginEnd="@dimen/menu_button_margin_end"
             android:backgroundTint="@color/colorAccent"
+        android:contentDescription="@string/zoom_out"
             android:elevation="0dp"
             android:src="@drawable/ic_zoom_out" />
 
-        <ImageButton
+    <ImageButton
             android:id="@+id/zoomIn"
-            style="@style/Widget.AppCompat.ImageButton"
+        style="@style/Widget.AppCompat.ImageButton"
             android:layout_width="50dp"
             android:layout_height="50dp"
             android:layout_marginEnd="@dimen/menu_button_margin_end"
             android:backgroundTint="@color/colorAccent"
+        android:contentDescription="@string/zoom_in"
             android:elevation="0dp"
             android:src="@drawable/ic_zoom_in" />
-    </LinearLayout>
-
 </LinearLayout>

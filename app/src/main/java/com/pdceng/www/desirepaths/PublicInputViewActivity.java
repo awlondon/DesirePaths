@@ -43,6 +43,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.Objects;
 
 import static android.R.attr.maxLength;
 import static android.graphics.Color.LTGRAY;
@@ -147,6 +148,7 @@ public class PublicInputViewActivity extends AppCompatActivity implements AfterG
 
         ImageView ivProfile = new ImageView(this);
         ivProfile.setLayoutParams(new LinearLayout.LayoutParams(100, 100));
+        ivProfile.setImageResource(R.drawable.com_facebook_profile_picture_blank_square);
         new DownloadImageTask(ivProfile, null).execute(userBundle.getString(UserTable.PHOTO_URL));
 
         tvUser.setText(italicUser);
@@ -220,10 +222,10 @@ public class PublicInputViewActivity extends AppCompatActivity implements AfterG
                 etComment.canScrollHorizontally(View.SCROLL_AXIS_VERTICAL);
 
                 Button postButton = new Button(mContext);
-                postButton.setText("POST");
+                postButton.setText(R.string.post);
                 postButton.getBackground().setColorFilter(getColor(R.color.darkBlue), PorterDuff.Mode.MULTIPLY);
                 Button cancelButton = new Button(mContext);
-                cancelButton.setText("CANCEL");
+                cancelButton.setText(R.string.cancel);
 
                 LinearLayout llButtons = new LinearLayout(mContext);
                 llButtons.setOrientation(LinearLayout.HORIZONTAL);
@@ -498,6 +500,9 @@ public class PublicInputViewActivity extends AppCompatActivity implements AfterG
             System.out.println(urlDisplay);
             Bitmap bitmap = null;
             if (!URLUtil.isValidUrl(urlDisplay)) {
+                if (urlDisplay == null || Objects.equals(urlDisplay, "null")) {
+                    return null;
+                }
                 if (!Universals.isBitmapInMemoryCache(urlDisplay)) {
                     FTPClient ftpClient = new FTPClient();
                     System.out.println("Starting connection to FTP site!");
@@ -530,13 +535,15 @@ public class PublicInputViewActivity extends AppCompatActivity implements AfterG
         }
 
         protected void onPostExecute(Bitmap result) {
-            bmImage.setAlpha(0f);
-            bmImage.setImageBitmap(result);
-            bmImage.animate()
-                    .setDuration(500)
-                    .alphaBy(1f);
-            if (progressBar != null) {
-                progressBar.setVisibility(View.GONE);
+            if (result != null) {
+                bmImage.setAlpha(0f);
+                bmImage.setImageBitmap(result);
+                bmImage.animate()
+                        .setDuration(500)
+                        .alphaBy(1f);
+                if (progressBar != null) {
+                    progressBar.setVisibility(View.GONE);
+                }
             }
         }
     }

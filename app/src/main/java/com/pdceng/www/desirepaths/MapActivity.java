@@ -22,11 +22,11 @@ import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -100,7 +100,7 @@ import java.util.Objects;
 import java.util.Scanner;
 import java.util.concurrent.ScheduledExecutorService;
 
-public class MapActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleMap.OnInfoWindowClickListener, AfterGetAll, CommentsAdapterInterface
+public class MapActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnInfoWindowClickListener, AfterGetAll, CommentsAdapterInterface
 {
     static final int delay_getAll = 30;
     private static final String TAG = "tag";
@@ -144,6 +144,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     FragmentManager fragmentManager;
     FragmentTransaction fragmentTransaction;
     RelativeLayout topView;
+    LatLng mCurrLatLng;
+    SupportMapFragment mapFragment;
     private ClusterManager<MyItem> mClusterManager;
     private HeatmapTileProvider mProvider;
     private TileOverlay mOverlay;
@@ -155,7 +157,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private boolean mCameraPermissionGranted;
     private boolean mStoragePermissionGranted;
     private ImageView mImageView;
-    private LatLng mCurrLatLng;
     private Algorithm<MyItem> clusterManagerAlgorithm;
     private List<CameraPosition> previousCameraPositions = new ArrayList<>();
     private CameraPosition tempCameraPosition;
@@ -179,11 +180,16 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         checkPermission();
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+//        getSupportFragmentManager().beginTransaction().remove(mapFragment).commit();
+    }
+
     private void chooseProject(final GoogleMap googleMap) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Choose a project");
         final String[] projects = dh.getAllProjectNames();
-//        builder.setCancelable(false);
         builder.setItems(projects, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
@@ -333,7 +339,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         }
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+        mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
@@ -356,6 +362,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
+        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(63.976, -151.4777), 4));
         chooseProject(googleMap);
     }
 
@@ -686,7 +693,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
         Gradient gradient = new Gradient(colors, startPoints);
 
-        List<LatLng> list = null;
+        List<LatLng> list;
         list = lls;
 
         mProvider = new HeatmapTileProvider.Builder()
@@ -803,8 +810,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                                 Manifest.permission.INTERNET},
                         PERMISSIONS_MULTIPLE_REQUEST);
             }
-        } else {
-            // write your logic code if permission already granted
         }
     }
 
@@ -874,7 +879,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     }
 
     void toggleOptions(View v) {
-        LinearLayout ll = null;
+        LinearLayout ll;
         System.out.println("toggle options was called...");
         if (v instanceof ToggleButton) {
             System.out.println("view is instance of toggle button...");
@@ -887,7 +892,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                         Toast.makeText(mContext, "You cannot add public input anonymously", Toast.LENGTH_SHORT).show();
                         return;
                     }
-                    ll = (LinearLayout) findViewById(R.id.addType);
+                    ll = (LinearLayout) findViewById(R.id.llAddType);
             }
             if (((ToggleButton) v).isChecked()) {
 
@@ -980,6 +985,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private void addPIEntriesToDatabase() {
         List<PublicInput> publicInputList = CardsUtils.loadPublicInputs(mContext);
 
+        assert publicInputList != null;
         for (PublicInput publicInput : publicInputList) {
             Bundle bundle = new Bundle();
             bundle.putString(PIEntryTable.URL, publicInput.getUrl());
@@ -1034,42 +1040,38 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     }
 
     void chooseLocationExec(boolean knownLoc, final String title, final String snippet, final String sentiment, final Bitmap finalImageBitmap, final PublicInputAddActivity.SendImageFTP finalSendImageFTP, Activity activityRef) {
-        System.out.println("starting choose location function...");
         activityRef.finish();
         String message = "Touch map to move marker or press and hold-down on marker to drag into position, then click \'OK\'";
-        /*Snackbar.make(findViewById(android.R.id.content),message,
-                Snackbar.LENGTH_INDEFINITE).setAction("THANKS, GOT IT",
-                new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                    }
-                }).show();*/
         Toast.makeText(this, message, Toast.LENGTH_LONG).show();
-//                Toast.makeText(mContext, "Drag marker to desired position; click \'OK\'", Toast.LENGTH_LONG).show();
         final Button okButton = new Button(mContext);
         okButton.setText(R.string.OK);
         RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-//        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_END);
         layoutParams.addRule(RelativeLayout.ABOVE, findViewById(R.id.menu).getId());
 
         okButton.setLayoutParams(layoutParams);
         topView.addView(okButton);
 
-        if (!knownLoc || mCurrLatLng == null) {
+        if (!knownLoc ||
+                mCurrLatLng == null ||
+                Math.abs(mCurrLatLng.latitude - Universals.PROJECT.getLatLng().latitude) > 0.3f ||
+                Math.abs(mCurrLatLng.longitude - Universals.PROJECT.getLatLng().longitude) > 0.3f) {
+
             mCurrLatLng = mMap.getCameraPosition().target;
+
             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(mCurrLatLng, 15));
+            Toast.makeText(this, "Your current location is unknown or too far from the project area.", Toast.LENGTH_SHORT).show();
         }
 
         BitmapDescriptor mIcon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE);
         switch (sentiment) {
             case Universals.IDEA:
-                mIcon = BitmapDescriptorFactory.fromResource(R.drawable.idea_icon);
+                mIcon = BitmapDescriptorFactory.fromResource(R.drawable.idea_icon_shadow);
                 break;
             case Universals.COMMENT:
-                mIcon = BitmapDescriptorFactory.fromResource(R.drawable.comment_icon);
+                mIcon = BitmapDescriptorFactory.fromResource(R.drawable.comment_icon_shadow);
                 break;
             case Universals.WARNING:
-                mIcon = BitmapDescriptorFactory.fromResource(R.drawable.attention_icon);
+                mIcon = BitmapDescriptorFactory.fromResource(R.drawable.attention_icon_shadow);
         }
 
         final Marker tempMarker = mMap.addMarker(new MarkerOptions()
@@ -1109,6 +1111,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 mCurrLatLng = tempMarker.getPosition();
                 tempMarker.remove();
                 topView.removeView(okButton);
+                Universals.bitmapBeingProcessed = null;
 
                 Bundle bundle = new Bundle();
                 bundle.putString(PIEntryTable.URL, finalImageBitmap != null ? finalSendImageFTP.getFilename() : "");

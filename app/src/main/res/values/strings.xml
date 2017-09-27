@@ -24,4 +24,23 @@
     <string name="title_home">Home</string>
     <string name="title_dashboard">Dashboard</string>
     <string name="title_notifications">Notifications</string>
+    <string name="add_from_camera">Add from camera</string>
+    <string name="add_from_gallery">Add from gallery</string>
+    <string name="add_text_only">Add text only</string>
+    <string name="info">Info</string>
+    <string name="help">Help</string>
+    <string name="filter">Filter</string>
+    <string name="rate">Rate</string>
+    <string name="add">Add</string>
+    <string name="zoom_out">zoom out</string>
+    <string name="zoom_in">zoom in</string>
+    <string name="add_arrow">add arrow</string>
+    <string name="thumbs_arrow">thumbs arrow</string>
+    <string name="ideas">Ideas</string>
+    <string name="comments">Comments</string>
+    <string name="warnings">Warnings</string>
+    <string name="space" />
+    <string name="rate_module">rate module</string>
+    <string name="post">POST</string>
+    <string name="cancel">CANCEL</string>
 </resources>

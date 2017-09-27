@@ -27,21 +27,18 @@ import java.util.Objects;
 
 import static android.database.sqlite.SQLiteQueryBuilder.appendColumns;
 
-/**
- * Created by alondon on 8/2/2017.
- */
 
-public class DatabaseHelper extends SQLiteOpenHelper {
+class DatabaseHelper extends SQLiteOpenHelper {
 
-    public static final String DATABASE_NAME = "adv_data.db";
     static final int NO_RATING_GIVEN = 0;
     static final int POS_RATING_GIVEN = 1;
     static final int NEG_RATING_GIVEN = 2;
+    private static final String DATABASE_NAME = "adv_data.db";
     private static final int DATABASE_VERSION = 1;
     private static DatabaseHelper instance;
-    Context mContext;
+    private Context mContext;
 
-    public DatabaseHelper(Context context) {
+    DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
         mContext = context;
     }
@@ -136,6 +133,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             insert(bundle, userTable);
             thisAnonymousUser = addAnonymousString;
         }
+        if (c != null) {
+            c.close();
+        }
         Universals.SOCIAL_MEDIA_ID = thisAnonymousUser;
         Universals.USER_NAME = "Anonymous User";
     }
@@ -154,6 +154,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         result.setZoom(Integer.valueOf(bundle.getString(ProjectTable.ZOOM)));
         List<String> questionsList = new ArrayList<>();
         String questions = bundle.getString(ProjectTable.QUESTIONS);
+
         assert questions != null;
         String[] questionsArray = questions.split("/");
         Collections.addAll(questionsList, questionsArray);
@@ -175,7 +176,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } else {
             System.out.println("Could not find row!!!");
         }
-        c.close();
+        if (c != null) {
+            c.close();
+        }
         db.close();
         return bundle;
     }
@@ -266,7 +269,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         int count = 0;
         Cursor c = db.query(UserTable.TABLE_NAME, null, null, null, null, null, null);
         System.out.println("users: " + c.getCount());
-        if (c != null && c.moveToFirst()) {
+        if (c.moveToFirst()) {
             do {
                 String pi_agree = c.getString(c.getColumnIndexOrThrow(UserTable.PI_AGREE));
                 String pi_disagree = c.getString(c.getColumnIndexOrThrow(UserTable.PI_DISAGREE));
@@ -529,7 +532,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 i++;
             } while (c.moveToNext());
         }
-        c.close();
+        if (c != null) {
+            c.close();
+        }
 
         HashMap<String, Integer> idsAndRatings = new HashMap<>();
         List<Integer> ratings = new ArrayList<>();
@@ -564,7 +569,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         Cursor c = db.query(table.tableName(), null, null, null, null, null, null, null);
         int count = 0;
         if (c != null && c.moveToFirst()) do count++; while (c.moveToNext());
-        c.close();
+        if (c != null) {
+            c.close();
+        }
         if (db.isOpen()) db.close();
 
         return count;

@@ -30,14 +30,10 @@ import org.apache.commons.net.ftp.FTPClient;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-
-/**
- * Created by alondon on 7/27/2017.
- */
-
+import java.util.Objects;
 
 @Layout(R.layout.card_view)
-public class PublicInputCard {
+class PublicInputCard {
 
     @View(R.id.progressBar)
     private ProgressBar progressBar;
@@ -67,7 +63,7 @@ public class PublicInputCard {
     private Bundle userBundle;
     private DatabaseHelper dh;
 
-    public PublicInputCard(Context context, PublicInput publicInput, SwipePlaceHolderView swipeView) {
+    PublicInputCard(Context context, PublicInput publicInput, SwipePlaceHolderView swipeView) {
         mContext = context;
         mPublicInput = publicInput;
         mSwipeView = swipeView;
@@ -146,7 +142,7 @@ public class PublicInputCard {
         protected void onPreExecute() {
             super.onPreExecute();
             progressBar.setVisibility(android.view.View.VISIBLE);
-            publicInputImageView.setImageBitmap(null);
+//            publicInputImageView.setImageBitmap(null);
         }
 
         protected Bitmap doInBackground(String... urls) {
@@ -156,8 +152,8 @@ public class PublicInputCard {
 
             if (!URLUtil.isValidUrl(urlDisplay)) {
                 if (!Universals.isBitmapInMemoryCache(urlDisplay)) {
-                    if (urlDisplay == null || urlDisplay.isEmpty()) {
-
+                    if (urlDisplay == null || urlDisplay.isEmpty() || Objects.equals(urlDisplay, "null")) {
+                        return null;
                     } else {
                         FTPClient ftpClient = new FTPClient();
                         System.out.println("Starting connection to FTP site!");
@@ -196,7 +192,13 @@ public class PublicInputCard {
 
         protected void onPostExecute(Bitmap result) {
             progressBar.setVisibility(android.view.View.GONE);
-            bmImage.setImageBitmap(result);
+            if (result != null) {
+                bmImage.setAlpha(0f);
+                bmImage.setImageBitmap(result);
+                bmImage.animate()
+                        .setDuration(500)
+                        .alphaBy(1f);
+            }
         }
     }
 }
