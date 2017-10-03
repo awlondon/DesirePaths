@@ -40,8 +40,8 @@ class CardsUtils {
     }
 
     private static String loadJSONFromAsset(Context context) {
-        String json = null;
-        InputStream is=null;
+        String json;
+        InputStream is;
         try {
             AssetManager manager = context.getAssets();
             Log.d(TAG, "path " + "public_input.json");

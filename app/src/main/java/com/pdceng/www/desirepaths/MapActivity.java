@@ -143,6 +143,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     FragmentManager fragmentManager;
     FragmentTransaction fragmentTransaction;
     LatLng mCurrLatLng;
+    Universals universals;
     private CommentsAdapter adapter;
     private ListView listView;
     private RelativeLayout topView;
@@ -172,7 +173,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
         topView = (RelativeLayout) findViewById(R.id.topView);
-        Universals universals = new Universals(this);
+        universals = new Universals(this);
         setClickListeners();
         bringUpMap();
         checkPermission();
@@ -889,6 +890,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
             int animDur = 200;
             if (((ToggleButton) v).isChecked()) {
 
+                assert ll != null;
                 ll.setVisibility(View.VISIBLE);
                 ll.setAlpha(0);
                 ll.setPivotY(ll.getMeasuredHeight());
@@ -916,6 +918,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                             }
                         });
             } else {
+                assert ll != null;
                 ll.setPivotY(ll.getMeasuredHeight());
                 final LinearLayout finalLl1 = ll;
                 ll.animate()
@@ -961,7 +964,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                 }
             }
             if (strings.size() == 0) {
-                addItems(new String[]{null});
+                addItems(null);
             } else {
                 String[] strs = new String[strings.size()];
                 strs = strings.toArray(strs);

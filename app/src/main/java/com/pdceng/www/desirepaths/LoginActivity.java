@@ -5,14 +5,24 @@ import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.Signature;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Movie;
+import android.graphics.Point;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.FragmentActivity;
+import android.util.AttributeSet;
 import android.util.Base64;
 import android.util.Log;
+import android.view.Display;
+import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
+import android.webkit.WebView;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import com.facebook.AccessToken;
@@ -30,18 +40,24 @@ import com.google.android.gms.auth.api.signin.GoogleSignInResult;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Timestamp;
 import java.util.Arrays;
+import java.util.Timer;
+import java.util.TimerTask;
 
 
 public class LoginActivity extends FragmentActivity implements AfterGetAll, GoogleApiClient.ConnectionCallbacks {
     private static final int RC_SIGN_IN = 12;
+    private static final String TAG = "tag";
     private final DatabaseHelper dh = new DatabaseHelper(this);
     private final Context mContext = this;
     private String name;
@@ -52,11 +68,24 @@ public class LoginActivity extends FragmentActivity implements AfterGetAll, Goog
     private Button bAnon;
     private GoogleApiClient mGoogleApiClient;
     private CallbackManager callbackManager;
+    private FirebaseAuth mAuth;
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        // Check if user is signed in (non-null) and update UI accordingly.
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+//        updateUI(currentUser);
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.splash);
+
+
+        mAuth = FirebaseAuth.getInstance();
+
         dh.getAllFromSQL(this);
         bAnon = (Button) findViewById(R.id.bAnon);
         bAnon.setOnClickListener(new View.OnClickListener() {
@@ -87,7 +116,7 @@ public class LoginActivity extends FragmentActivity implements AfterGetAll, Goog
 
         login_button = (LoginButton) findViewById(R.id.facebook_button);
 
-        if (AccessToken.getCurrentAccessToken()!=null) {
+        if (AccessToken.getCurrentAccessToken() != null) {
             GraphRequest graphRequest = GraphRequest.newMeRequest(AccessToken.getCurrentAccessToken(), new GraphRequest.GraphJSONObjectCallback() {
                 @Override
                 public void onCompleted(JSONObject object, GraphResponse response) {
@@ -143,7 +172,8 @@ public class LoginActivity extends FragmentActivity implements AfterGetAll, Goog
         }
 
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestEmail().requestIdToken(this.getString(R.string.default_web_client_id))
+                .requestEmail()
+                .requestIdToken(this.getString(R.string.default_web_client_id))
                 .build();
 
         mGoogleApiClient = new GoogleApiClient.Builder(this)
@@ -157,7 +187,7 @@ public class LoginActivity extends FragmentActivity implements AfterGetAll, Goog
                 .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
                 .build();
 
-        SignInButton signInButton = (SignInButton) findViewById(R.id.google_button);
+        final SignInButton signInButton = (SignInButton) findViewById(R.id.google_button);
         signInButton.setSize(SignInButton.SIZE_STANDARD);
 
         signInButton.setOnClickListener(new View.OnClickListener() {
@@ -166,6 +196,59 @@ public class LoginActivity extends FragmentActivity implements AfterGetAll, Goog
                 googleSignIn();
             }
         });
+
+        signInButton.setVisibility(View.GONE);
+        login_button.setVisibility(View.GONE);
+        bAnon.setVisibility(View.GONE);
+        final View tvName = findViewById(R.id.name);
+        final View tvDescr = findViewById(R.id.description);
+        tvName.setVisibility(View.GONE);
+        tvDescr.setVisibility(View.GONE);
+
+        final WebView webView = new WebView(this);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        params.gravity = Gravity.CENTER;
+
+        Display display = getWindowManager().getDefaultDisplay();
+        Point size = new Point();
+        display.getSize(size);
+        int ivHeightSetting = size.y / 2;
+        int ivWidthSetting = size.x / 2;
+        int topMargin = ivHeightSetting - 400;
+        int leftMargin = ivWidthSetting - 490;
+
+        params.setMargins(leftMargin, topMargin, 0, 0);
+        webView.setLayoutParams(params);
+        webView.loadUrl("file:///android_asset/pdc_logo_anim.html");
+        final LinearLayout topView = (LinearLayout) findViewById(R.id.topView);
+        topView.addView(webView);
+
+        new Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        webView.setVisibility(View.GONE);
+                        signInButton.setVisibility(View.VISIBLE);
+                        login_button.setVisibility(View.VISIBLE);
+                        bAnon.setVisibility(View.VISIBLE);
+                        tvName.setVisibility(View.VISIBLE);
+                        tvDescr.setVisibility(View.VISIBLE);
+
+                        for (int i = 0; i < topView.getChildCount(); i++) {
+                            View view = topView.getChildAt(i);
+                            view.setAlpha(0);
+                            view.animate()
+                                    .alphaBy(1)
+                                    .setDuration(500)
+                                    .start();
+                        }
+                    }
+                });
+            }
+        }, 3500);
+
     }
 
     @Override
@@ -184,6 +267,7 @@ public class LoginActivity extends FragmentActivity implements AfterGetAll, Goog
         if (result.isSuccess()) {
             Toast.makeText(this, "Sign in success", Toast.LENGTH_SHORT).show();
             GoogleSignInAccount acct = result.getSignInAccount();
+            assert acct != null;
             name = (acct != null ? acct.getGivenName() : null) + " " + acct.getFamilyName();
             social_media_id = acct.getId();
             photo_url = acct.getPhotoUrl().toString();
@@ -215,7 +299,7 @@ public class LoginActivity extends FragmentActivity implements AfterGetAll, Goog
 
         dh.getAllFromSQL(this);
         Universals.isAnon = false;
-        Intent intent = new Intent(this,MapActivity.class);
+        Intent intent = new Intent(this, MapActivity.class);
         startActivity(intent);
     }
 
@@ -223,6 +307,32 @@ public class LoginActivity extends FragmentActivity implements AfterGetAll, Goog
         Intent intent = Auth.GoogleSignInApi.getSignInIntent(mGoogleApiClient);
         startActivityForResult(intent, RC_SIGN_IN);
     }
+
+//    private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
+//        Log.d(TAG, "firebaseAuthWithGoogle:" + acct.getId());
+//
+//        AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
+//        mAuth.signInWithCredential(credential)
+//                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+//                    @Override
+//                    public void onComplete(@NonNull Task<AuthResult> task) {
+//                        if (task.isSuccessful()) {
+//                            // Sign in success, update UI with the signed-in user's information
+//                            Log.d(TAG, "signInWithCredential:success");
+//                            FirebaseUser user = mAuth.getCurrentUser();
+//                            updateUI(user);
+//                        } else {
+//                            // If sign in fails, display a message to the user.
+//                            Log.w(TAG, "signInWithCredential:failure", task.getException());
+//                            Toast.makeText(GoogleSignInActivity.this, "Authentication failed.",
+//                                    Toast.LENGTH_SHORT).show();
+//                            updateUI(null);
+//                        }
+//
+//                        // ...
+//                    }
+//                });
+//    }
 
     @Override
     public void afterGetAll() {
@@ -237,5 +347,57 @@ public class LoginActivity extends FragmentActivity implements AfterGetAll, Goog
     @Override
     public void onConnectionSuspended(int i) {
 
+    }
+
+    public class GIFView extends View {
+        public Movie mMovie;
+        public long movieStart;
+        private int gifId;
+
+        public GIFView(Context context) {
+            super(context);
+            initializeView();
+        }
+
+        public GIFView(Context context, AttributeSet attrs) {
+            super(context, attrs);
+            initializeView();
+        }
+
+        public GIFView(Context context, AttributeSet attrs, int defStyle) {
+            super(context, attrs, defStyle);
+            initializeView();
+        }
+
+        private void initializeView() {
+//R.drawable.loader - our animated GIF
+            InputStream is = getContext().getResources().openRawResource(R.raw.pdc_logo_anim);
+            mMovie = Movie.decodeStream(is);
+        }
+
+        @Override
+        protected void onDraw(Canvas canvas) {
+            canvas.drawColor(Color.TRANSPARENT);
+            super.onDraw(canvas);
+            long now = android.os.SystemClock.uptimeMillis();
+            if (movieStart == 0) {
+                movieStart = now;
+            }
+            if (mMovie != null) {
+                int relTime = (int) ((now - movieStart) % mMovie.duration());
+                mMovie.setTime(relTime);
+                mMovie.draw(canvas, getWidth() - mMovie.width(), getHeight() - mMovie.height());
+                this.invalidate();
+            }
+        }
+
+        public int getGIFResource() {
+            return this.gifId;
+        }
+
+        public void setGIFResource(int resId) {
+            this.gifId = resId;
+            initializeView();
+        }
     }
 }

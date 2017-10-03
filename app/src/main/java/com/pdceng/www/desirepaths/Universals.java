@@ -153,7 +153,8 @@ public class Universals {
     }
 
     static boolean isBitmapInMemoryCache(String key) {
-        return key != null && bitmapMemoryCache.get(key) != null;
+
+        return (key != null) && (bitmapMemoryCache.get(key) != null);
     }
 
     static void sendBitmapForProcessing(Bitmap bitmap) {
@@ -195,36 +196,39 @@ public class Universals {
         long compareToDays = TimeUnit.MILLISECONDS.toDays(lastTime.getTime() - firstTime.getTime());
         String result = null;
 
+        Log.d("compareToMillis", String.valueOf(compareToMillis));
+        Log.d("compareToDays", String.valueOf(compareToDays));
+
 //        Log.d("compareToMillis", String.valueOf(compareToMillis));
 //        Log.d("compareToDays", String.valueOf(compareToDays));
 
         //This if/else routine finds the most appropriate description of the time between the date argument and now.
-        int value = 0;
+        int value;
         if (compareToMillis < MINUTE) {
             value = (int) (compareToMillis / SECOND);
             if (value == 1) result = value + " second";
             else result = value + " seconds";
-        } else if (compareToMillis > MINUTE && compareToMillis < HOUR) {
+        } else if (compareToMillis >= MINUTE && compareToMillis < HOUR) {
             value = (int) (compareToMillis / MINUTE);
             if (value == 1) result = value + " minute";
             else result = value + " minutes";
-        } else if (compareToMillis > HOUR && compareToMillis < DAY) {
+        } else if (compareToMillis >= HOUR && compareToMillis < DAY) {
             value = (int) (compareToMillis / HOUR);
             if (value == 1) result = value + " hour";
             else result = value + " hours";
-        } else if (compareToMillis > DAY && compareToDays < WEEK) {
+        } else if (compareToMillis >= DAY && compareToDays < WEEK) {
             value = (int) (compareToMillis / DAY);
             if (value == 1) result = value + " day";
             else result = value + " days";
-        } else if (compareToDays > WEEK && compareToDays < MONTH) {
+        } else if (compareToDays >= WEEK && compareToDays < MONTH) {
             value = (int) (compareToDays / WEEK);
             if (value == 1) result = value + " week";
             else result = value + " weeks";
-        } else if (compareToDays > MONTH && compareToDays < YEAR) {
+        } else if (compareToDays >= MONTH && compareToDays < YEAR) {
             value = (int) (compareToDays / MONTH);
             if (value == 1) result = value + " month";
             else result = value + " months";
-        } else if (compareToDays > YEAR) {
+        } else if (compareToDays >= YEAR) {
             value = (int) (compareToDays / YEAR);
             if (value == 1) result = value + " year";
             else result = value + " years";

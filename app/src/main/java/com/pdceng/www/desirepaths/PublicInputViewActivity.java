@@ -4,6 +4,7 @@ import android.animation.Animator;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Point;
 import android.graphics.PorterDuff;
 import android.graphics.Typeface;
 import android.os.AsyncTask;
@@ -17,6 +18,7 @@ import android.text.InputType;
 import android.text.SpannableString;
 import android.text.style.StyleSpan;
 import android.util.Log;
+import android.view.Display;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -104,7 +106,12 @@ public class PublicInputViewActivity extends AppCompatActivity implements AfterG
 
         //START: create ImageView
         mImageView = new ImageView(this);
-        int ivHeightSetting = 700;
+
+        Display display = getWindowManager().getDefaultDisplay();
+        Point size = new Point();
+        display.getSize(size);
+        int ivHeightSetting = (int) (size.y * ((float) 2 / 5));
+
         ViewGroup.LayoutParams ivParams = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ivHeightSetting);
         mImageView.setLayoutParams(ivParams);
         mImageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
@@ -282,7 +289,7 @@ public class PublicInputViewActivity extends AppCompatActivity implements AfterG
         ratingsLayout.setOrientation(LinearLayout.HORIZONTAL);
         ratingsLayout.setGravity(Gravity.END);
 
-        LinearLayout.LayoutParams ratingParams = new LinearLayout.LayoutParams(200, ViewGroup.LayoutParams.WRAP_CONTENT);
+        LinearLayout.LayoutParams ratingParams = new LinearLayout.LayoutParams(150, ViewGroup.LayoutParams.WRAP_CONTENT);
 
         ibRatingDown = new ImageButton(this);
         ibRatingDown.setLayoutParams(ratingParams);
@@ -483,6 +490,12 @@ public class PublicInputViewActivity extends AppCompatActivity implements AfterG
         DownloadImageTask(ImageView bmImage, ProgressBar progressBar) {
             this.bmImage = bmImage;
             this.progressBar = progressBar;
+        }
+
+        @Override
+        protected void onCancelled(Bitmap bitmap) {
+            super.onCancelled(bitmap);
+            System.out.println("Download image task was cancelled!");
         }
 
         @Override

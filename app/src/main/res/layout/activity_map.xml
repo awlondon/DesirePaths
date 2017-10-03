@@ -81,9 +81,9 @@
                 android:layout_height="wrap_content"
                 android:layout_margin="3dp"
                 android:layout_weight="1"
-                android:backgroundTint="@color/darkGrey"
                 android:clickable="true"
                 android:src="@drawable/ic_add_note"
+                map:backgroundTint="@color/darkGrey"
                 map:fabSize="mini" />
 
             <TextView
@@ -109,10 +109,10 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="3dp"
-                android:backgroundTint="@color/darkGrey"
                 android:clickable="true"
                 android:src="@drawable/ic_add_photo_library"
                 android:visibility="visible"
+                map:backgroundTint="@color/darkGrey"
                 map:fabSize="mini" />
 
             <TextView
@@ -136,10 +136,10 @@
                 android:layout_height="wrap_content"
                 android:layout_margin="3dp"
                 android:layout_weight="1"
-                android:backgroundTint="@color/darkGrey"
                 android:clickable="true"
                 android:src="@drawable/ic_add_photo_camera"
                 android:visibility="visible"
+                map:backgroundTint="@color/darkGrey"
                 map:fabSize="mini" />
 
             <TextView
@@ -160,8 +160,8 @@
         android:id="@+id/addArrow"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-            android:layout_above="@id/menu"
-            android:layout_marginStart="20dp"
+        android:layout_above="@id/menu"
+        android:layout_marginStart="20dp"
         android:contentDescription="@string/add_arrow"
         android:src="@drawable/arrow_down"
         android:visibility="invisible" />

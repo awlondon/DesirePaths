@@ -3,9 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:gravity="end"
-    android:orientation="vertical">
-
-
+    android:orientation="horizontal">
     <ImageButton
             android:id="@+id/zoomOut"
             style="@style/Widget.AppCompat.ImageButton"

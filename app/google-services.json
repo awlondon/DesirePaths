@@ -1,7 +1,9 @@
 {
   "project_info": {
     "project_number": "107255467560",
-    "project_id": "desirepaths-177100"
+    "firebase_url": "https://desirepaths-177100.firebaseio.com",
+    "project_id": "desirepaths-177100",
+    "storage_bucket": "desirepaths-177100.appspot.com"
   },
   "client": [
     {
@@ -12,6 +14,18 @@
         }
       },
       "oauth_client": [
+        {
+          "client_id": "107255467560-9d6ih188288jisoosrlb13or5pdj0pbk.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.pdceng.www.desirepaths",
+            "certificate_hash": "b772ad52ad75409dedc1919a3e45879209b86c01"
+          }
+        },
+        {
+          "client_id": "107255467560-7quiscef6ego4o7rfbdibthidlvtuj42.apps.googleusercontent.com",
+          "client_type": 3
+        },
         {
           "client_id": "107255467560-17ssgsi7kd6cat9coaa58grrn9s9bkc8.apps.googleusercontent.com",
           "client_type": 3
@@ -35,11 +49,16 @@
           "status": 1
         },
         "appinvite_service": {
-          "status": 1,
-          "other_platform_oauth_client": []
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "107255467560-7quiscef6ego4o7rfbdibthidlvtuj42.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         },
         "ads_service": {
-          "status": 1
+          "status": 2
         }
       }
     }

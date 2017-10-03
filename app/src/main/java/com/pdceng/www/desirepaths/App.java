@@ -3,7 +3,6 @@ package com.pdceng.www.desirepaths;
 import android.app.Application;
 
 import com.parse.Parse;
-import com.parse.ParseObject;
 
 /**
  * Created by alondon on 7/27/2017.
