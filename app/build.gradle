@@ -6,10 +6,10 @@ android {
     useLibrary 'org.apache.http.legacy'
     defaultConfig {
         applicationId "com.pdceng.www.desirepaths"
-        minSdkVersion 23
+        minSdkVersion 21
         targetSdkVersion 25
-        versionCode 25
-        versionName "4.11"
+        versionCode 28
+        versionName "4.14"
         multiDexEnabled = true
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true

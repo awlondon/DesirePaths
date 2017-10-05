@@ -64,7 +64,7 @@ class PublicInputCard {
 
     @Resolve
     private void onResolved(){
-        Universals universals = new Universals(mContext);
+//        Universals universals = new Universals(mContext);
         new DownloadImageTask(publicInputImageView).execute(mPublicInput.getUrl());
         new DownloadImageTask(ivProfile).execute(userBundle.getString(UserTable.PHOTO_URL));
         tvUser.setText(userBundle.getString(UserTable.NAME));

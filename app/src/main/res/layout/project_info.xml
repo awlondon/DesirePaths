@@ -10,23 +10,26 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/project_name"
-        android:textAppearance="@style/TextAppearance.AppCompat.Title" />
+        android:textColor="@color/common_google_signin_btn_text_dark_focused"
+        android:textSize="18sp"
+        android:textStyle="bold" />
 
     <TextView
         android:id="@+id/location"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="20dp"
+        android:layout_marginBottom="10dp"
         android:text="@string/city_state"
-        android:textAppearance="@style/TextAppearance.AppCompat.Caption" />
+        android:textSize="12sp" />
 
     <TextView
         android:id="@+id/description"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="20dp"
+        android:layout_marginBottom="10dp"
         android:text="@string/project_descrip"
-        android:textAppearance="@style/TextAppearance.AppCompat.Body1" />
+        android:textColor="@color/common_google_signin_btn_text_dark_focused"
+        android:textSize="14sp" />
 
     <Button
         android:id="@+id/website"

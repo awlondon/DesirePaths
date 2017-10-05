@@ -78,8 +78,8 @@ public class PublicInputViewActivity extends AppCompatActivity implements AfterG
         //START: set CardView layout
         CardView.LayoutParams params = new CardView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
         cardView.setLayoutParams(params);
-        cardView.setCardBackgroundColor(getColor(R.color.white));
-        cardView.setBackgroundColor(getColor(R.color.white));
+        cardView.setCardBackgroundColor(getResources().getColor(R.color.white));
+        cardView.setBackgroundColor(getResources().getColor(R.color.white));
         cardView.bringToFront();
         cardView.setRadius(0);
         cardView.setClickable(true);
@@ -108,7 +108,7 @@ public class PublicInputViewActivity extends AppCompatActivity implements AfterG
         mImageView = new ImageView(this);
 
         Display display = getWindowManager().getDefaultDisplay();
-        Point size = new Point();
+        final Point size = new Point();
         display.getSize(size);
         int ivHeightSetting = (int) (size.y * ((float) 2 / 5));
 
@@ -153,7 +153,10 @@ public class PublicInputViewActivity extends AppCompatActivity implements AfterG
         llProfile.setOrientation(LinearLayout.HORIZONTAL);
 
         ImageView ivProfile = new ImageView(this);
-        ivProfile.setLayoutParams(new LinearLayout.LayoutParams(100, 100));
+        System.out.println("screen width: " + size.x);
+        double divFactor = 10.8;
+        int ivProfileSize = (int) (size.x / divFactor);
+        ivProfile.setLayoutParams(new LinearLayout.LayoutParams(ivProfileSize, ivProfileSize));
         ivProfile.setImageResource(R.drawable.com_facebook_profile_picture_blank_square);
         new DownloadImageTask(ivProfile, null).execute(userBundle.getString(UserTable.PHOTO_URL));
 
@@ -205,9 +208,10 @@ public class PublicInputViewActivity extends AppCompatActivity implements AfterG
                 linearLayout1.setOrientation(VERTICAL);
                 cardView.addView(linearLayout1);
                 linearLayout1.setLayoutParams(new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
-                linearLayout1.setBackgroundColor(getColor(R.color.lightGreyTransparent));
+                linearLayout1.setBackgroundColor(getResources().getColor(R.color.lightGreyTransparent));
 
-                LinearLayout.LayoutParams etParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 300);
+                int etHeight = size.y / 3;
+                LinearLayout.LayoutParams etParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
                 etParams.setMargins(margin, margin, margin, margin);
                 etParams.gravity = Gravity.TOP;
 
@@ -219,17 +223,17 @@ public class PublicInputViewActivity extends AppCompatActivity implements AfterG
                 InputFilter[] fArray = new InputFilter[1];
                 fArray[0] = new InputFilter.LengthFilter(maxLength);
                 etComment.setFilters(fArray);
-                etComment.setBackgroundColor(getColor(R.color.white));
+                etComment.setBackgroundColor(getResources().getColor(R.color.white));
                 etComment.setPadding(margin, 0, margin, 0);
                 etComment.setLayoutParams(etParams);
-                etComment.setMaxLines(5);
+                etComment.setMinLines(5);
                 etComment.setScrollBarStyle(View.SCROLLBARS_INSIDE_INSET);
                 etComment.setOverScrollMode(OVER_SCROLL_ALWAYS);
                 etComment.canScrollHorizontally(View.SCROLL_AXIS_VERTICAL);
 
                 Button postButton = new Button(mContext);
                 postButton.setText(R.string.post);
-                postButton.getBackground().setColorFilter(getColor(R.color.darkBlue), PorterDuff.Mode.MULTIPLY);
+                postButton.getBackground().setColorFilter(getResources().getColor(R.color.darkBlue), PorterDuff.Mode.MULTIPLY);
                 Button cancelButton = new Button(mContext);
                 cancelButton.setText(R.string.cancel);
 
@@ -289,7 +293,9 @@ public class PublicInputViewActivity extends AppCompatActivity implements AfterG
         ratingsLayout.setOrientation(LinearLayout.HORIZONTAL);
         ratingsLayout.setGravity(Gravity.END);
 
-        LinearLayout.LayoutParams ratingParams = new LinearLayout.LayoutParams(150, ViewGroup.LayoutParams.WRAP_CONTENT);
+        divFactor = 5.4;
+        int ivRatingSize = (int) (size.x / divFactor);
+        LinearLayout.LayoutParams ratingParams = new LinearLayout.LayoutParams(ivRatingSize, ViewGroup.LayoutParams.WRAP_CONTENT);
 
         ibRatingDown = new ImageButton(this);
         ibRatingDown.setLayoutParams(ratingParams);
@@ -345,7 +351,7 @@ public class PublicInputViewActivity extends AppCompatActivity implements AfterG
 
         ListView.LayoutParams lvParams = new AbsListView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         listView.setLayoutParams(lvParams);
-        listView.setBackgroundColor(getColor(R.color.white));
+        listView.setBackgroundColor(getResources().getColor(R.color.white));
         listView.setDividerHeight(0);
         listView.setDivider(null);
 

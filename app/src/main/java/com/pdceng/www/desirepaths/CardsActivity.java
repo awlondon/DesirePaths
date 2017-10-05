@@ -39,8 +39,6 @@ public class CardsActivity extends AppCompatActivity {
                         .setSwipeInMsgLayoutId(R.layout.swipe_in_msg_view)
                         .setSwipeOutMsgLayoutId(R.layout.swipe_out_msg_view));
 
-//        for(PublicInput publicInput : CardsUtils.loadPublicInputs(this.getApplicationContext())){
-//            mSwipeView.addView(new PublicInputCard(this, publicInput, mSwipeView));
         PublicInput[] publicInputs = new DatabaseHelper(mContext).getPublicInputByCurrentProject();
         try {
             if (publicInputs[0] != null) {

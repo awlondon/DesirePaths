@@ -5,6 +5,7 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.Point;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -15,6 +16,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.CardView;
 import android.text.InputFilter;
 import android.text.InputType;
+import android.view.Display;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
@@ -63,7 +65,11 @@ public class PublicInputAddActivity extends AppCompatActivity implements AfterGe
             imageBitmap = Universals.sampleBitmap(imageBitmap);
 
             final ImageView imageView = new ImageView(this);
-            ViewGroup.LayoutParams ivParams = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 700);
+            Display display = getWindowManager().getDefaultDisplay();
+            Point size = new Point();
+            display.getSize(size);
+            int ivHeight = size.y / 2;
+            ViewGroup.LayoutParams ivParams = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ivHeight);
             imageView.setLayoutParams(ivParams);
             imageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
 
@@ -79,7 +85,7 @@ public class PublicInputAddActivity extends AppCompatActivity implements AfterGe
 //        params.setMargins(30, 30, 30, 200);
         cardView.setLayoutParams(params);
 
-        cardView.setCardBackgroundColor(getColor(R.color.white));
+        cardView.setCardBackgroundColor(getResources().getColor(R.color.white));
         cardView.setCardElevation(20f);
         cardView.setClickable(true);
 

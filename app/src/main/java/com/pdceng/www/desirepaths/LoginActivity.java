@@ -40,8 +40,13 @@ import com.google.android.gms.auth.api.signin.GoogleSignInResult;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthCredential;
+import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.GoogleAuthProvider;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -56,8 +61,8 @@ import java.util.TimerTask;
 
 
 public class LoginActivity extends FragmentActivity implements AfterGetAll, GoogleApiClient.ConnectionCallbacks {
-    private static final int RC_SIGN_IN = 12;
-    private static final String TAG = "tag";
+    private static final int RC_SIGN_IN = 9001;
+    private static final String TAG = "GoogleActivity";
     private final DatabaseHelper dh = new DatabaseHelper(this);
     private final Context mContext = this;
     private String name;
@@ -71,22 +76,13 @@ public class LoginActivity extends FragmentActivity implements AfterGetAll, Goog
     private FirebaseAuth mAuth;
 
     @Override
-    protected void onStart() {
-        super.onStart();
-        // Check if user is signed in (non-null) and update UI accordingly.
-        FirebaseUser currentUser = mAuth.getCurrentUser();
-//        updateUI(currentUser);
-    }
-
-    @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.splash);
 
-
-        mAuth = FirebaseAuth.getInstance();
-
         dh.getAllFromSQL(this);
+
+        //Anonymous login setup
         bAnon = (Button) findViewById(R.id.bAnon);
         bAnon.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -110,10 +106,9 @@ public class LoginActivity extends FragmentActivity implements AfterGetAll, Goog
         } catch (PackageManager.NameNotFoundException | NoSuchAlgorithmException ignored) {
 
         }
-
-//        FacebookSdk.sdkInitialize(this.getApplicationContext());
         callbackManager = CallbackManager.Factory.create();
 
+        //Facebook login setup
         login_button = (LoginButton) findViewById(R.id.facebook_button);
 
         if (AccessToken.getCurrentAccessToken() != null) {
@@ -171,13 +166,14 @@ public class LoginActivity extends FragmentActivity implements AfterGetAll, Goog
             });
         }
 
+        //Google login setup
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestEmail()
                 .requestIdToken(this.getString(R.string.default_web_client_id))
                 .build();
 
         mGoogleApiClient = new GoogleApiClient.Builder(this)
-                .addConnectionCallbacks(this)
+//                .addConnectionCallbacks(this)
                 .enableAutoManage(this, new GoogleApiClient.OnConnectionFailedListener() {
                     @Override
                     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
@@ -186,6 +182,8 @@ public class LoginActivity extends FragmentActivity implements AfterGetAll, Goog
                 })
                 .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
                 .build();
+
+        mAuth = FirebaseAuth.getInstance();
 
         final SignInButton signInButton = (SignInButton) findViewById(R.id.google_button);
         signInButton.setSize(SignInButton.SIZE_STANDARD);
@@ -214,7 +212,7 @@ public class LoginActivity extends FragmentActivity implements AfterGetAll, Goog
         display.getSize(size);
         int ivHeightSetting = size.y / 2;
         int ivWidthSetting = size.x / 2;
-        int topMargin = ivHeightSetting - 400;
+        int topMargin = ivHeightSetting - 450;
         int leftMargin = ivWidthSetting - 490;
 
         params.setMargins(leftMargin, topMargin, 0, 0);
@@ -251,33 +249,46 @@ public class LoginActivity extends FragmentActivity implements AfterGetAll, Goog
 
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == RC_SIGN_IN) {
-            GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
-            handleSignInResult(result);
-        } else {
-            callbackManager.onActivityResult(requestCode, resultCode, data);
-        }
-    }
+
 
     private void handleSignInResult(GoogleSignInResult result) {
         Log.d("handleSignInResult", String.valueOf(result.isSuccess()));
         if (result.isSuccess()) {
             Toast.makeText(this, "Sign in success", Toast.LENGTH_SHORT).show();
             GoogleSignInAccount acct = result.getSignInAccount();
-            assert acct != null;
-            name = (acct != null ? acct.getGivenName() : null) + " " + acct.getFamilyName();
-            social_media_id = acct.getId();
-            photo_url = acct.getPhotoUrl().toString();
-            checkUser();
+            firebaseAuthWithGoogle(acct);
+            if (acct != null) {
+                name = acct.getGivenName() + " " + acct.getFamilyName();
+                social_media_id = acct.getId();
+                photo_url = acct.getPhotoUrl().toString();
+                checkUser();
+            }
         } else {
             Toast.makeText(this, "Could not sign-in! Try again, or enter anonymously", Toast.LENGTH_SHORT).show();
             System.out.println("Error: " + result.getStatus().toString());
 //            Intent intent = new Intent(this,MapActivity.class);
 //            startActivity(intent);
         }
+    }
+
+    private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
+        Log.d(TAG, "firebaseAuthWithGoogleL" + acct.getId());
+
+        AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
+        mAuth.signInWithCredential(credential)
+                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+                        if (task.isSuccessful()) {
+                            Log.d(TAG, "signInWithCredential:success");
+                            FirebaseUser user = mAuth.getCurrentUser();
+                            checkUser();
+                        } else {
+                            Log.w(TAG, "signInWithCredential:failure", task.getException());
+                            Toast.makeText(LoginActivity.this, "Authentication failed.", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
     }
 
     private void checkUser() {
@@ -308,31 +319,23 @@ public class LoginActivity extends FragmentActivity implements AfterGetAll, Goog
         startActivityForResult(intent, RC_SIGN_IN);
     }
 
-//    private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
-//        Log.d(TAG, "firebaseAuthWithGoogle:" + acct.getId());
-//
-//        AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
-//        mAuth.signInWithCredential(credential)
-//                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
-//                    @Override
-//                    public void onComplete(@NonNull Task<AuthResult> task) {
-//                        if (task.isSuccessful()) {
-//                            // Sign in success, update UI with the signed-in user's information
-//                            Log.d(TAG, "signInWithCredential:success");
-//                            FirebaseUser user = mAuth.getCurrentUser();
-//                            updateUI(user);
-//                        } else {
-//                            // If sign in fails, display a message to the user.
-//                            Log.w(TAG, "signInWithCredential:failure", task.getException());
-//                            Toast.makeText(GoogleSignInActivity.this, "Authentication failed.",
-//                                    Toast.LENGTH_SHORT).show();
-//                            updateUI(null);
-//                        }
-//
-//                        // ...
-//                    }
-//                });
-//    }
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == RC_SIGN_IN) {
+            GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
+            handleSignInResult(result);
+        } else {
+            callbackManager.onActivityResult(requestCode, resultCode, data);
+        }
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        // Check if user is signed in (non-null) and update UI accordingly.
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+    }
 
     @Override
     public void afterGetAll() {
@@ -348,6 +351,7 @@ public class LoginActivity extends FragmentActivity implements AfterGetAll, Goog
     public void onConnectionSuspended(int i) {
 
     }
+
 
     public class GIFView extends View {
         public Movie mMovie;

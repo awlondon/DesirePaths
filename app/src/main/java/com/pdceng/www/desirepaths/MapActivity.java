@@ -191,6 +191,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                 establishMap(googleMap);
             }
         });
+        builder.setCancelable(false);
         builder.create();
         builder.show();
     }

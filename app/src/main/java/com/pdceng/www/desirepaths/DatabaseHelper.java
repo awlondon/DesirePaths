@@ -726,9 +726,6 @@ class DatabaseHelper extends SQLiteOpenHelper {
         String JSONResult;
         AfterGetAll afterGetAll = null;
 
-        GetJSONFromUrl() {
-        }
-
         GetJSONFromUrl(AfterGetAll afterGetAll) {
             this.afterGetAll = afterGetAll;
         }
@@ -757,10 +754,10 @@ class DatabaseHelper extends SQLiteOpenHelper {
                 table = new PIEntryTable();
             } else if (JSONResult.contains(UserTable.PHOTO_URL)) {
                 table = new UserTable();
-            } else if (JSONResult.contains(CommentsTable.COMMENT)) {
-                table = new CommentsTable();
-            } else {
+            } else if (JSONResult.contains(ProjectTable.QUESTIONS)) {
                 table = new ProjectTable();
+            } else {
+                table = new CommentsTable();
             }
             System.out.println("table: " + table.tableName());
 
